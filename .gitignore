@@ -1,0 +1,7 @@
+go.sum
+.idea
+docs/docs.go
+docs/swagger.json
+docs/swagger.yaml
+config.json
+wire_gen.go
