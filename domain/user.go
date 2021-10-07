@@ -18,12 +18,12 @@ const (
 )
 
 type User struct {
-	Id uuid.UUID `gorm:"type:char(36);primaryKey"`
-	Role UserRole `gorm:"size:30;index;not null"`
-	Username string `gorm:"size:320;index;not null"`
-	Password string `gorm:"size:60;not null"`
-	CreatedAt time.Time `gorm:"size:6;not null"`
-	UpdatedAt time.Time `gorm:"size:6;not null"`
+	Id        uuid.UUID  `gorm:"type:char(36);primaryKey"`
+	Role      UserRole   `gorm:"size:30;index;not null"`
+	Username  string     `gorm:"size:320;index;not null"`
+	Password  string     `gorm:"size:60;not null"`
+	CreatedAt time.Time  `gorm:"size:6;not null"`
+	UpdatedAt time.Time  `gorm:"size:6;not null"`
 	DeletedAt *time.Time `gorm:"size:6;index"`
 }
 
