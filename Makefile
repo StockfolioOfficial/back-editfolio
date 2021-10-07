@@ -2,7 +2,7 @@ ifndef BINARY
 	BINARY=debug
 endif
 
-GENERATE_PATH=${GOPATH}/bin
+GENERATE_PATH := $(shell go env GOPATH)/bin
 
 init:
 	go mod download all
@@ -11,7 +11,9 @@ init:
 	go install github.com/swaggo/swag/cmd/swag
 	go install github.com/google/wire/cmd/wire
 
-generate: swagger wire
+set-go-bin-env:
+
+generate: set-go-bin-env swagger wire
 
 swagger:
 	${GENERATE_PATH}/swag init
