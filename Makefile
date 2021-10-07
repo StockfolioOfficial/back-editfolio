@@ -10,7 +10,7 @@ init:
 	go install github.com/google/wire/cmd/wire
 
 generate-env:
-	export PATH=$PATH:$GOPATH
+	export PATH=${PATH}:${GOPATH}
 
 generate: generate-env swagger wire
 
