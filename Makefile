@@ -11,9 +11,7 @@ init:
 	go install github.com/swaggo/swag/cmd/swag
 	go install github.com/google/wire/cmd/wire
 
-set-go-bin-env:
-
-generate: set-go-bin-env swagger wire
+generate: swagger wire
 
 swagger:
 	${GENERATE_PATH}/swag init
