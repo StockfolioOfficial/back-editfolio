@@ -9,6 +9,8 @@ init:
 	go install github.com/swaggo/swag/cmd/swag
 	go install github.com/google/wire/cmd/wire
 
+generate: swagger wire
+
 swagger:
 	swag init
 
