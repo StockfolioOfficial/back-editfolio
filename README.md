@@ -8,6 +8,22 @@
 - [golang 1.17 🔺](https://golang.org/)
 - [mysql 5 🔺](https://www.mysql.com/)
 
+## Add Config file
+프로젝트 루트 폴더에 `config.json` 파일 추가
+### `config.json` data structure
+```json
+{
+  "db": {
+    "user": "root",       // string
+    "pass": "123456",     // string
+    "host": "localhost",  // string
+    "port": 3306,         // uint16
+    "name": "editfolio"   // fixed
+  },
+  "is_debug": true        // boolean
+}
+```
+
 ## Commands
 ```bash
 # pwd
