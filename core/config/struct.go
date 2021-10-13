@@ -9,6 +9,9 @@ var c struct {
 		Name string `json:"name"`
 	} `json:"db"`
 
-	IsDebug  bool   `json:"is_debug"`
-	MySecret string `json:"secret"`
+	IsDebug bool `json:"is_debug"`
+
+	JWT struct {
+		Secret string `json:"secret"`
+	} `json:"jwt"`
 }

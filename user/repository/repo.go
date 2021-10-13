@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+
 	"github.com/stockfolioofficial/back-editfolio/domain"
 	"github.com/stockfolioofficial/back-editfolio/util/gormx"
 	"gorm.io/gorm"
@@ -14,7 +15,6 @@ func NewUserRepository(db *gorm.DB) domain.UserRepository {
 		db: db,
 	}
 }
-
 
 type repo struct {
 	db *gorm.DB

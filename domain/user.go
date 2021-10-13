@@ -85,3 +85,7 @@ type UserUseCase interface {
 	CreateCustomerUser(ctx context.Context, cu CreateCustomerUser) (uuid.UUID, error)
 	SignInUser(ctx context.Context, si SignInUser) (string, error)
 }
+
+type TokenGenerateAdapter interface {
+	Generate(User) (string, error)
+}

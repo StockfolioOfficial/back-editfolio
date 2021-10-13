@@ -4,25 +4,26 @@ import (
 	"context"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
-	"github.com/stockfolioofficial/back-editfolio/core/config"
 	"github.com/stockfolioofficial/back-editfolio/domain"
 )
 
 func NewUserUseCase(
 	userRepo domain.UserRepository,
+	tokenAdapter domain.TokenGenerateAdapter,
 	timeout time.Duration,
 ) domain.UserUseCase {
 	return &ucase{
-		userRepo: userRepo,
-		timeout:  timeout,
+		userRepo:     userRepo,
+		tokenAdapter: tokenAdapter,
+		timeout:      timeout,
 	}
 }
 
 type ucase struct {
-	userRepo domain.UserRepository
-	timeout  time.Duration
+	userRepo     domain.UserRepository
+	tokenAdapter domain.TokenGenerateAdapter
+	timeout      time.Duration
 }
 
 func (u *ucase) CreateCustomerUser(ctx context.Context, cu domain.CreateCustomerUser) (newId uuid.UUID, err error) {
@@ -60,11 +61,7 @@ func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (token str
 
 	if user.ComparePassword(si.Password) {
 		// token generate
-		token, err = jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-			"id":   user.Id,
-			"role": user.Role,
-		}).SignedString([]byte(config.MySecret))
-
+		token, err = u.tokenAdapter.Generate(*user)
 	} else {
 		err = domain.UserWrongPassword
 	}
