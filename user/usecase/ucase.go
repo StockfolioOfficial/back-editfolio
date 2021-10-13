@@ -2,9 +2,12 @@ package usecase
 
 import (
 	"context"
-	"github.com/google/uuid"
-	"github.com/stockfolioofficial/back-editfolio/domain"
 	"time"
+
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
+	"github.com/stockfolioofficial/back-editfolio/core/config"
+	"github.com/stockfolioofficial/back-editfolio/domain"
 )
 
 func NewUserUseCase(
@@ -41,8 +44,7 @@ func (u *ucase) CreateCustomerUser(ctx context.Context, cu domain.CreateCustomer
 	return
 }
 
-
-func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (jwt string, err error) {
+func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (token string, err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
@@ -58,12 +60,14 @@ func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (jwt strin
 
 	if user.ComparePassword(si.Password) {
 		// token generate
-		jwt = "generate jwt"
+		token, err = jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"id":   user.Id,
+			"role": user.Role,
+		}).SignedString([]byte(config.MySecret))
+
 	} else {
 		err = domain.UserWrongPassword
 	}
 
 	return
 }
-
-

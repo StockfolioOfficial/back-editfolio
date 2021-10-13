@@ -9,5 +9,6 @@ var c struct {
 		Name string `json:"name"`
 	} `json:"db"`
 
-	IsDebug bool `json:"is_debug"`
+	IsDebug  bool   `json:"is_debug"`
+	MySecret string `json:"secret"`
 }
