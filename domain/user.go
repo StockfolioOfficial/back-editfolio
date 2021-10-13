@@ -43,6 +43,10 @@ func CreateUser(option UserCreateOption) User {
 	}
 }
 
+func (u *User) ComparePassword(plainPass string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(plainPass)) == nil
+}
+
 func (u *User) UpdatePassword(plainPass string) {
 	generated, _ := bcrypt.GenerateFromPassword([]byte(plainPass), bcrypt.DefaultCost + 2)
 	u.Password = string(generated)
@@ -55,6 +59,7 @@ func (u *User) stampUpdate() {
 
 type UserRepository interface {
 	Save(ctx context.Context, user *User) error
+	GetByUsername(ctx context.Context, username string) (*User, error)
 	Transaction(ctx context.Context, fn func(userRepo UserTxRepository) error, options ...*sql.TxOptions) error
 	With(tx gormx.Tx) UserTxRepository
 }
@@ -70,6 +75,12 @@ type CreateCustomerUser struct {
 	Mobile string
 }
 
+type SignInUser struct {
+	Username string
+	Password string
+}
+
 type UserUseCase interface {
 	CreateCustomerUser(ctx context.Context, cu CreateCustomerUser) (uuid.UUID, error)
+	SignInUser(ctx context.Context, si SignInUser) (string, error)
 }

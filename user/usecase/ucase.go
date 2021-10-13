@@ -41,3 +41,29 @@ func (u *ucase) CreateCustomerUser(ctx context.Context, cu domain.CreateCustomer
 	return
 }
 
+
+func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (jwt string, err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	user, err := u.userRepo.GetByUsername(c, si.Username)
+	if err != nil {
+		return
+	}
+
+	if user == nil {
+		err = domain.ItemNotFound
+		return
+	}
+
+	if user.ComparePassword(si.Password) {
+		// token generate
+		jwt = "generate jwt"
+	} else {
+		err = domain.UserWrongPassword
+	}
+
+	return
+}
+
+

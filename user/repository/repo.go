@@ -20,12 +20,26 @@ type repo struct {
 	db *gorm.DB
 }
 
-func (r *repo) Get() *gorm.DB {
-	return r.db
+func (r *repo) GetByUsername(ctx context.Context, username string) (user *domain.User, err error) {
+	var entity domain.User
+	err = r.db.WithContext(ctx).
+		Where("`username` = ?", username).
+		First(&entity).Error
+	if err == gorm.ErrRecordNotFound {
+		err = nil
+		return
+	}
+
+	user = &entity
+	return
 }
 
 func (r *repo) Save(ctx context.Context, user *domain.User) error {
 	return r.db.WithContext(ctx).Save(user).Error
+}
+
+func (r *repo) Get() *gorm.DB {
+	return r.db
 }
 
 func (r *repo) Transaction(ctx context.Context, fn func(userRepo domain.UserTxRepository) error, options ...*sql.TxOptions) error {
