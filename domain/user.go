@@ -26,6 +26,8 @@ type User struct {
 	CreatedAt time.Time  `gorm:"size:6;not null"`
 	UpdatedAt time.Time  `gorm:"size:6;not null"`
 	DeletedAt *time.Time `gorm:"size:6;index"`
+	Customer  *Customer  `gorm:"foreignKey:Id"`
+	Manager   *Manager   `gorm:"foreignKey:Id"`
 }
 
 type UserCreateOption struct {

@@ -1,11 +1,12 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/stockfolioofficial/back-editfolio/domain"
-	"net/http"
 )
 
 const (
@@ -75,5 +76,3 @@ func (h *HttpHandler) Bind(e *echo.Echo) {
 	//sign, auth
 	e.POST("/user/sign", h.signInUser)
 }
-
-
