@@ -68,3 +68,18 @@ func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (token str
 
 	return
 }
+
+func (u *ucase) DeleteCustomerUser(ctx context.Context, du domain.DeleteCustomerUser) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	user, err := u.userRepo.GetById(c, du.Id)
+
+	if user == nil || !user.IsUserRole() {
+		err = domain.ItemNotFound
+		return
+	}
+
+	user.Delete()
+	return u.userRepo.Save(ctx, user)
+}

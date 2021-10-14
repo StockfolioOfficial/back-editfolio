@@ -1,11 +1,12 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/stockfolioofficial/back-editfolio/domain"
-	"net/http"
 )
 
 const (
@@ -68,12 +69,48 @@ func (h *HttpHandler) createCustomer(ctx echo.Context) error {
 	}
 }
 
+type DeleteCustomerRequest struct {
+	// Id, 유저 Id
+	Id uuid.UUID `param:"userId" json:"-" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+} //@name DeleteCustomerRequest
+
+// @Summary 고객 유저 삭제
+// @Description 고객 유저를 삭제하는 기능
+// @Accept json
+// @Produce json
+// @Param customerUserBody body DeleteCustomerRequest true "Customer User Body"
+// @Success 204
+// @Router /user/customer/:userId [delete]
+func (h *HttpHandler) deleteCustomerUser(ctx echo.Context) error {
+	var req DeleteCustomerRequest
+
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "delete customer, request body bind error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	err = h.useCase.DeleteCustomerUser(ctx.Request().Context(), domain.DeleteCustomerUser{
+		Id: req.Id,
+	})
+
+	switch err {
+	case nil:
+		return ctx.JSON(http.StatusNoContent, domain.ErrorResponse{Message: err.Error()})
+	default:
+		log.WithError(err).Error(tag, "delete customer")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+}
+
 func (h *HttpHandler) Bind(e *echo.Echo) {
 	//CRUD, customer or admin
 	e.POST("/user/customer", h.createCustomer)
 
 	//sign, auth
 	e.POST("/user/sign", h.signInUser)
+
+	e.DELETE("/user/customer/:userId", h.deleteCustomerUser)
 }
-
-

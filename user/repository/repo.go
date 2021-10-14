@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/google/uuid"
 	"github.com/stockfolioofficial/back-editfolio/domain"
 	"github.com/stockfolioofficial/back-editfolio/util/gormx"
 	"gorm.io/gorm"
@@ -34,6 +35,19 @@ func (r *repo) GetByUsername(ctx context.Context, username string) (user *domain
 	return
 }
 
+func (r *repo) GetById(ctx context.Context, userId uuid.UUID) (user *domain.User, err error) {
+	var entity domain.User
+	err = r.db.WithContext(ctx).First(&entity, userId).Error
+
+	if err == gorm.ErrRecordNotFound {
+		err = nil
+		return
+	}
+
+	user = &entity
+	return
+}
+
 func (r *repo) Save(ctx context.Context, user *domain.User) error {
 	return r.db.WithContext(ctx).Save(user).Error
 }
@@ -50,4 +64,8 @@ func (r *repo) Transaction(ctx context.Context, fn func(userRepo domain.UserTxRe
 
 func (r *repo) With(tx gormx.Tx) domain.UserTxRepository {
 	return &repo{db: tx.Get()}
+}
+
+func (r *repo) Delete(ctx context.Context, user *domain.User) error {
+	return r.db.WithContext(ctx).Delete(user).Error
 }
