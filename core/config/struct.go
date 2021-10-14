@@ -10,4 +10,8 @@ var c struct {
 	} `json:"db"`
 
 	IsDebug bool `json:"is_debug"`
+
+	JWT struct {
+		Secret string `json:"secret"`
+	} `json:"jwt"`
 }

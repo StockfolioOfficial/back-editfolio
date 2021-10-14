@@ -69,7 +69,11 @@ func (h *HttpHandler) createCustomer(ctx echo.Context) error {
 }
 
 func (h *HttpHandler) Bind(e *echo.Echo) {
+	//CRUD, customer or admin
 	e.POST("/user/customer", h.createCustomer)
+
+	//sign, auth
+	e.POST("/user/sign", h.signInUser)
 }
 
 
