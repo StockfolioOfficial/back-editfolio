@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/stockfolioofficial/back-editfolio/core/debug"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -43,10 +44,6 @@ type UpdatePasswordRequest struct {
 	NewPassword string `json:"newPassword" validate:"required" example:"01087654321"`
 } // @name UpdatePasswordRequest
 
-type UpdatePasswordResp struct {
-	Message string `json:"message" example:"updated"`
-} // @name UpdatePasswordResponse
-
 // @Summary 고객 유저 생성
 // @Description 고객 유저를 생성하는 기능
 // @Accept json
@@ -80,14 +77,14 @@ func (h *HttpHandler) createCustomer(ctx echo.Context) error {
 	}
 }
 
+// @Security Auth-Jwt-Bearer
 // @Summary 어드민 비밀번호 수정
 // @Description 어드민 유저의 비밀번호를 수정하는 API
 // @Accept json
 // @Produce json
 // @Param updateAdminPassword body UpdatePasswordRequest true "Update Admin Password"
-// @Param User-Id header string true "testvalue"
-// @Success 204 {object} UpdatePasswordResp
-// @Router /user/admin/pw [put]
+// @Success 204 "비밀번호 변경 성공"
+// @Router /user/admin/pw [patch]
 func (h *HttpHandler) updateAdminPassword(ctx echo.Context) error {
 	var req UpdatePasswordRequest
 
@@ -100,17 +97,24 @@ func (h *HttpHandler) updateAdminPassword(ctx echo.Context) error {
 		})
 	}
 
-	msg, err := h.useCase.UpdateAdminPassword(ctx.Request().Context(), domain.UpdateAdminPassword{
+	err = h.useCase.UpdateAdminPassword(ctx.Request().Context(), domain.UpdateAdminPassword{
 		UserId:      uuid.MustParse(req.UserId),
 		OldPassword: req.OldPassword,
 		NewPassword: req.NewPassword,
 	})
 
-	if err != nil {
+	switch err {
+	case nil:
+		return ctx.NoContent(http.StatusNoContent)
+	case domain.UserWrongPassword:
+		return ctx.JSON(http.StatusUnauthorized, domain.UserWrongPasswordToUpdatePassword)
+	case domain.ItemNotFound:
+		return ctx.JSON(http.StatusUnauthorized, domain.ErrorResponse{Message: err.Error()})
+	default:
+		log.WithError(err).Error(tag, "update password, unhandled error useCase.UpdateAdminPassword")
 		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
 	}
 
-	return ctx.JSON(http.StatusNoContent, UpdatePasswordResp{Message: msg})
 }
 
 func (h *HttpHandler) Bind(e *echo.Echo) {
@@ -121,5 +125,5 @@ func (h *HttpHandler) Bind(e *echo.Echo) {
 	e.POST("/user/sign", h.signInUser)
 
 	//Update Admin Password
-	e.PUT("/user/admin/pw", h.updateAdminPassword)
+	e.PATCH("/user/admin/pw", h.updateAdminPassword, debug.JwtBypassOnDebug())
 }
