@@ -98,7 +98,7 @@ type UpdateAdminPassword struct {
 
 type UserUseCase interface {
 	CreateCustomerUser(ctx context.Context, cu CreateCustomerUser) (uuid.UUID, error)
-	UpdateAdminPassword(ctx context.Context, up UpdateAdminPassword) (string, error)
+	UpdateAdminPassword(ctx context.Context, up UpdateAdminPassword) error
 	SignInUser(ctx context.Context, si SignInUser) (string, error)
 }
 
