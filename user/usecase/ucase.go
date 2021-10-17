@@ -45,18 +45,13 @@ func (u *ucase) CreateCustomerUser(ctx context.Context, cu domain.CreateCustomer
 	return
 }
 
-func (u *ucase) UpdateAdminPassword(ctx context.Context, up domain.UpdateAdminPassword) (msg string, err error) {
+func (u *ucase) UpdateAdminPassword(ctx context.Context, up domain.UpdateAdminPassword) (err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
 	user, err := u.userRepo.GetById(c, up.UserId)
-	if user == nil {
+	if user == nil || user.IsDeleted() || !user.IsAdminRole() {
 		err = domain.ItemNotFound
-		return
-	}
-
-	if user.IsAdminRole() || user.IsDeleted() {
-		err = domain.UserNotAdmin
 		return
 	}
 
@@ -66,10 +61,7 @@ func (u *ucase) UpdateAdminPassword(ctx context.Context, up domain.UpdateAdminPa
 	}
 
 	user.UpdatePassword(up.NewPassword)
-	msg = "updated"
-	err = u.userRepo.Save(c, user)
-
-	return
+	return u.userRepo.Save(c, user)
 }
 
 func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (token string, err error) {
