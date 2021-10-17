@@ -13,9 +13,19 @@ var (
 
 	UserNotAdmin = errors.New("not admin")
 
-	UserSignInFailedResponse = ErrorResponse{
-		ErrorCode: pointer.String("U-10"),
+	InvalidateTokenResponse = ErrorResponse{
+		ErrorCode: pointer.String("A-1"),
 		Message:   "unauthorized",
+	}
+
+	UserSignInFailedResponse = ErrorResponse{
+		ErrorCode: pointer.String("U-1"),
+		Message:   "unauthorized",
+	}
+	
+	UserWrongPasswordToUpdatePassword = ErrorResponse{
+		ErrorCode: pointer.String("U-2"),
+		Message:   UserWrongPassword.Error(),
 	}
 
 	ServerInternalErrorResponse = ErrorResponse{
