@@ -50,6 +50,14 @@ func (u *User) ComparePassword(plainPass string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(plainPass)) == nil
 }
 
+func (u *User) IsAdminRole() bool {
+	return u.Role == AdminUserRole
+}
+
+func (u *User) IsDeleted() bool {
+	return u.DeletedAt == nil
+}
+
 func (u *User) UpdatePassword(plainPass string) {
 	generated, _ := bcrypt.GenerateFromPassword([]byte(plainPass), bcrypt.DefaultCost+2)
 	u.Password = string(generated)
@@ -63,6 +71,7 @@ func (u *User) stampUpdate() {
 type UserRepository interface {
 	Save(ctx context.Context, user *User) error
 	GetByUsername(ctx context.Context, username string) (*User, error)
+	GetById(ctx context.Context, userId uuid.UUID) (*User, error)
 	Transaction(ctx context.Context, fn func(userRepo UserTxRepository) error, options ...*sql.TxOptions) error
 	With(tx gormx.Tx) UserTxRepository
 }
@@ -83,8 +92,15 @@ type SignInUser struct {
 	Password string
 }
 
+type UpdateAdminPassword struct {
+	OldPassword string
+	NewPassword string
+	UserId      uuid.UUID
+}
+
 type UserUseCase interface {
 	CreateCustomerUser(ctx context.Context, cu CreateCustomerUser) (uuid.UUID, error)
+	UpdateAdminPassword(ctx context.Context, up UpdateAdminPassword) error
 	SignInUser(ctx context.Context, si SignInUser) (string, error)
 }
 
