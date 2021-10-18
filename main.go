@@ -1,5 +1,9 @@
 package main
 
+// @securityDefinitions.apikey Auth-Jwt-Bearer
+// @in header
+// @name Authorization
+
 // todo termsOfService 변경 필요
 
 // @title 에딧폴리오 public API

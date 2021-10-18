@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"github.com/stockfolioofficial/back-editfolio/core/debug"
+	"net/http"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/stockfolioofficial/back-editfolio/domain"
-	"net/http"
 )
 
 const (
@@ -34,6 +36,13 @@ type CreateCustomerRequest struct {
 type CreatedCustomerResp struct {
 	Id uuid.UUID `json:"id" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 } // @name CreatedCustomerResponse
+
+type UpdatePasswordRequest struct {
+	UserId string `json:"-" header:"User-Id" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	// Mobile, 형식 : 01012345678
+	OldPassword string `json:"oldPassword" validate:"required" example:"01012345678"`
+	NewPassword string `json:"newPassword" validate:"required" example:"01087654321"`
+} // @name UpdatePasswordRequest
 
 // @Summary 고객 유저 생성
 // @Description 고객 유저를 생성하는 기능
@@ -68,12 +77,53 @@ func (h *HttpHandler) createCustomer(ctx echo.Context) error {
 	}
 }
 
+// @Security Auth-Jwt-Bearer
+// @Summary 어드민 비밀번호 수정
+// @Description 어드민 유저의 비밀번호를 수정하는 API
+// @Accept json
+// @Produce json
+// @Param updateAdminPassword body UpdatePasswordRequest true "Update Admin Password"
+// @Success 204 "비밀번호 변경 성공"
+// @Router /user/admin/pw [patch]
+func (h *HttpHandler) updateAdminPassword(ctx echo.Context) error {
+	var req UpdatePasswordRequest
+
+	req.UserId = ctx.Request().Header.Get("User-Id")
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "update password, request body bind error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	err = h.useCase.UpdateAdminPassword(ctx.Request().Context(), domain.UpdateAdminPassword{
+		UserId:      uuid.MustParse(req.UserId),
+		OldPassword: req.OldPassword,
+		NewPassword: req.NewPassword,
+	})
+
+	switch err {
+	case nil:
+		return ctx.NoContent(http.StatusNoContent)
+	case domain.UserWrongPassword:
+		return ctx.JSON(http.StatusUnauthorized, domain.UserWrongPasswordToUpdatePassword)
+	case domain.ItemNotFound:
+		return ctx.JSON(http.StatusUnauthorized, domain.ErrorResponse{Message: err.Error()})
+	default:
+		log.WithError(err).Error(tag, "update password, unhandled error useCase.UpdateAdminPassword")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+
+}
+
 func (h *HttpHandler) Bind(e *echo.Echo) {
 	//CRUD, customer or admin
 	e.POST("/user/customer", h.createCustomer)
 
 	//sign, auth
 	e.POST("/user/sign", h.signInUser)
+
+	//Update Admin Password
+	e.PATCH("/user/admin/pw", h.updateAdminPassword, debug.JwtBypassOnDebug())
 }
-
-
