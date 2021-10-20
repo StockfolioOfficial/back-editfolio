@@ -117,6 +117,19 @@ func (h *HttpHandler) updateAdminPassword(ctx echo.Context) error {
 
 }
 
+func (h *HttpHandler) createAdmin(ctx echo.Context) error {
+	newId, err := h.useCase.CreateAdminUser(ctx.Request().Context(), domain.CreateAdminUser{
+		Name:     "name",
+		Email:    "email",
+		Password: "password",
+		Nickname: "nickname",
+	})
+	if uuid.Nil == newId { // dummy
+
+	}
+	return err // dummy error handling
+}
+
 func (h *HttpHandler) Bind(e *echo.Echo) {
 	//CRUD, customer or admin
 	e.POST("/user/customer", h.createCustomer)
@@ -126,4 +139,7 @@ func (h *HttpHandler) Bind(e *echo.Echo) {
 
 	//Update Admin Password
 	e.PATCH("/user/admin/pw", h.updateAdminPassword, debug.JwtBypassOnDebug())
+
+	//create admin
+	e.POST("/user/admin", h.createAdmin)
 }

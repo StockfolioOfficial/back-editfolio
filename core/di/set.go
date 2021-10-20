@@ -1,6 +1,7 @@
 package di
 
 import (
+	repository2 "github.com/stockfolioofficial/back-editfolio/manager/repository"
 	"time"
 
 	"github.com/google/wire"
@@ -40,6 +41,7 @@ var adapterSet = wire.NewSet(
 
 var repositorySet = wire.NewSet(
 	repository.NewUserRepository,
+	repository2.NewManagerRepository,
 )
 
 var useCaseSet = wire.NewSet(
