@@ -28,6 +28,8 @@ type User struct {
 	DeletedAt *time.Time `gorm:"size:6;index"`
 	Customer  *Customer  `gorm:"foreignKey:Id"`
 	Manager   *Manager   `gorm:"foreignKey:Id"`
+	Orderer   *Order     `gorm:"foreignKey:orderer"`
+	Assignee  *Order     `gorm:"foreignKey:assignee"`
 }
 
 type UserCreateOption struct {
