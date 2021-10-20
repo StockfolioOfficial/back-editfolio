@@ -46,6 +46,7 @@ func NewMiddleware() middlewares {
 			// todo debug 추후 production 모드일때 스크립트 형태로 외부에서 주입 받는 기능 추가 필요
 			AllowOrigins: []string{"*"},
 			AllowHeaders: []string{"*"},
+			AllowMethods: []string{"*"},
 		}),
 	}
 }
