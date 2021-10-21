@@ -38,7 +38,6 @@ func (r *repo) GetByUsername(ctx context.Context, username string) (user *domain
 func (r *repo) GetById(ctx context.Context, userId uuid.UUID) (user *domain.User, err error) {
 	var entity domain.User
 	err = r.db.WithContext(ctx).First(&entity, userId).Error
-
 	if err == gorm.ErrRecordNotFound {
 		err = nil
 		return

@@ -2,7 +2,9 @@ package di
 
 import (
 	"github.com/labstack/echo/v4"
+	log "github.com/sirupsen/logrus"
 	"github.com/stockfolioofficial/back-editfolio/core/app"
+	"github.com/stockfolioofficial/back-editfolio/core/config"
 	"github.com/stockfolioofficial/back-editfolio/core/di/scope"
 	"github.com/stockfolioofficial/back-editfolio/helloworld/handler"
 	handler2 "github.com/stockfolioofficial/back-editfolio/user/handler"
@@ -15,6 +17,12 @@ func OnStart(
 	user *handler2.HttpHandler,
 ) app.OnStart {
 	return func() error {
+		logLevel := log.ErrorLevel
+		if config.IsDebug {
+			logLevel = log.TraceLevel
+		}
+		log.SetLevel(logLevel)
+
 		// global middleware set
 		e.Use(mw...)
 
@@ -39,4 +47,3 @@ func OnClose() app.OnClose {
 
 	}
 }
-

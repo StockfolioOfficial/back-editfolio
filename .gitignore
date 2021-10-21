@@ -5,3 +5,4 @@ docs/swagger.json
 docs/swagger.yaml
 config.json
 wire_gen.go
+.vscode

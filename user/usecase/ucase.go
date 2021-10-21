@@ -45,6 +45,25 @@ func (u *ucase) CreateCustomerUser(ctx context.Context, cu domain.CreateCustomer
 	return
 }
 
+func (u *ucase) UpdateAdminPassword(ctx context.Context, up domain.UpdateAdminPassword) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	user, err := u.userRepo.GetById(c, up.UserId)
+	if user == nil || user.IsDeleted() || !user.IsAdmin() {
+		err = domain.ItemNotFound
+		return
+	}
+
+	if !user.ComparePassword(up.OldPassword) {
+		err = domain.UserWrongPassword
+		return
+	}
+
+	user.UpdatePassword(up.NewPassword)
+	return u.userRepo.Save(c, user)
+}
+
 func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (token string, err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
@@ -75,7 +94,7 @@ func (u *ucase) DeleteCustomerUser(ctx context.Context, du domain.DeleteCustomer
 
 	user, err := u.userRepo.GetById(c, du.Id)
 
-	if user == nil || !user.IsUserRole() {
+	if user == nil || !user.IsCustomer() {
 		err = domain.ItemNotFound
 		return
 	}

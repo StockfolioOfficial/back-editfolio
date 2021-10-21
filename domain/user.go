@@ -27,6 +27,8 @@ type User struct {
 	CreatedAt time.Time  `gorm:"size:6;not null"`
 	UpdatedAt time.Time  `gorm:"size:6;not null"`
 	DeletedAt *time.Time `gorm:"size:6;index"`
+	Customer  *Customer  `gorm:"foreignKey:Id"`
+	Manager   *Manager   `gorm:"foreignKey:Id"`
 }
 
 type UserCreateOption struct {
@@ -49,8 +51,20 @@ func (u *User) ComparePassword(plainPass string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(plainPass)) == nil
 }
 
-func (u *User) IsUserRole() bool {
-	return u.Role == CustomerUserRole
+func (u *User) IsCustomer() bool {
+	return u.HasRole(CustomerUserRole)
+}
+
+func (u *User) IsAdmin() bool {
+	return u.HasRole(AdminUserRole)
+}
+
+func (u *User) HasRole(role UserRole) bool {
+	return u.Role == role
+}
+
+func (u *User) IsDeleted() bool {
+	return u.DeletedAt == nil
 }
 
 func (u *User) UpdatePassword(plainPass string) {
@@ -91,8 +105,15 @@ type SignInUser struct {
 	Password string
 }
 
+type UpdateAdminPassword struct {
+	OldPassword string
+	NewPassword string
+	UserId      uuid.UUID
+}
+
 type UserUseCase interface {
 	CreateCustomerUser(ctx context.Context, cu CreateCustomerUser) (uuid.UUID, error)
+	UpdateAdminPassword(ctx context.Context, up UpdateAdminPassword) error
 	SignInUser(ctx context.Context, si SignInUser) (string, error)
 	DeleteCustomerUser(ctx context.Context, du DeleteCustomerUser) error
 }
