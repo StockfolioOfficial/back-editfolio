@@ -29,6 +29,8 @@ type User struct {
 	DeletedAt *time.Time `gorm:"size:6;index"`
 	Customer  *Customer  `gorm:"foreignKey:Id"`
 	Manager   *Manager   `gorm:"foreignKey:Id"`
+	MyJob     []Order    `gorm:"foreignKey:orderer"`
+	Ticket    []Order    `gorm:"foreignKey:assignee"`
 }
 
 func (User) TableName() string {
