@@ -68,10 +68,6 @@ func (u *User) UpdatePassword(plainPass string) {
 	u.stampUpdate()
 }
 
-func (u *User) SetManager(manager *Manager) {
-	u.Manager = manager
-}
-
 func (u *User) stampUpdate() {
 	u.UpdatedAt = time.Now()
 }

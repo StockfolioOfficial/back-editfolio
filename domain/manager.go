@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+
 	"github.com/google/uuid"
 	"github.com/stockfolioofficial/back-editfolio/util/gormx"
 )
@@ -32,6 +33,7 @@ func CreateManager(option ManagerCreateOption) Manager {
 
 type ManagerRepository interface {
 	Save(ctx context.Context, manager *Manager) error
+	GetById(ctx context.Context, userId uuid.UUID) (*Manager, error)
 	With(tx gormx.Tx) ManagerTxRepository
 }
 

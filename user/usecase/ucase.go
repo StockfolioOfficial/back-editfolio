@@ -2,8 +2,9 @@ package usecase
 
 import (
 	"context"
-	"golang.org/x/sync/errgroup"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/google/uuid"
 	"github.com/stockfolioofficial/back-editfolio/domain"
@@ -92,6 +93,13 @@ func (u *ucase) CreateAdminUser(ctx context.Context, au domain.CreateAdminUser) 
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
+	email, err := u.userRepo.GetByUsername(c, au.Email)
+
+	if email != nil {
+		err = domain.ItemAlreadyExist
+		return
+	}
+
 	var user = createUser(domain.AdminUserRole, au.Email, au.Password)
 	var manager = domain.CreateManager(domain.ManagerCreateOption{
 		User:     &user,
@@ -99,7 +107,6 @@ func (u *ucase) CreateAdminUser(ctx context.Context, au domain.CreateAdminUser) 
 		Nickname: au.Nickname,
 	})
 
-	user.SetManager(&manager)
 	err = u.userRepo.Transaction(c, func(ur domain.UserTxRepository) error {
 		mr := u.managerRepo.With(ur)
 		g, gc := errgroup.WithContext(c)
@@ -113,6 +120,28 @@ func (u *ucase) CreateAdminUser(ctx context.Context, au domain.CreateAdminUser) 
 	})
 	newId = user.Id
 	return
+}
+
+func (u *ucase) loadManager(ctx context.Context, userId uuid.UUID) (*domain.User, error) {
+	var user *domain.User
+	var manager *domain.Manager
+
+	g, c := errgroup.WithContext(ctx)
+	g.Go(func() (err error) {
+		user, err = u.userRepo.GetById(c, userId)
+		return
+	})
+	g.Go(func() (err error) {
+		manager, err = u.managerRepo.GetById(c, userId)
+		return
+	})
+	err := g.Wait()
+	if err != nil {
+		return nil, err
+	}
+
+	user.Manager = manager
+	return user, nil
 }
 
 func createUser(role domain.UserRole, username, password string) (user domain.User) {

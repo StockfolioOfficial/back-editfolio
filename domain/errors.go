@@ -13,6 +13,8 @@ var (
 
 	UserNotAdmin = errors.New("not admin")
 
+	ItemAlreadyExist = errors.New("item already exsits")
+
 	InvalidateTokenResponse = ErrorResponse{
 		ErrorCode: pointer.String("A-1"),
 		Message:   "unauthorized",
@@ -22,10 +24,15 @@ var (
 		ErrorCode: pointer.String("U-1"),
 		Message:   "unauthorized",
 	}
-	
+
 	UserWrongPasswordToUpdatePassword = ErrorResponse{
 		ErrorCode: pointer.String("U-2"),
 		Message:   UserWrongPassword.Error(),
+	}
+
+	ItemExist = ErrorResponse{
+		ErrorCode: pointer.String("U-3"),
+		Message:   ItemAlreadyExist.Error(),
 	}
 
 	ServerInternalErrorResponse = ErrorResponse{
