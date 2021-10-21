@@ -104,6 +104,21 @@ func (u *ucase) DeleteCustomerUser(ctx context.Context, du domain.DeleteCustomer
 	return u.userRepo.Save(ctx, user)
 }
 
+func (u *ucase) DeleteAdminUser(ctx context.Context, da domain.DeleteAdminUser) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	user, err := u.userRepo.GetById(c, da.Id)
+
+	if user == nil || !user.IsAdmin() {
+		err = domain.ItemNotFound
+		return
+	}
+
+	user.Delete()
+	return u.userRepo.Save(ctx, user)
+}
+
 func (u *ucase) CreateAdminUser(ctx context.Context, au domain.CreateAdminUser) (newId uuid.UUID, err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()

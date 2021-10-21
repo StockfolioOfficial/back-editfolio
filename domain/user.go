@@ -65,6 +65,10 @@ func (u *User) IsAdmin() bool {
 	return u.HasRole(AdminUserRole)
 }
 
+func (u *User) IsSuperAdmin() bool {
+	return u.HasRole(SuperAdminUserRole)
+}
+
 func (u *User) HasRole(role UserRole) bool {
 	return u.Role == role
 }
@@ -137,5 +141,9 @@ type TokenGenerateAdapter interface {
 }
 
 type DeleteCustomerUser struct {
+	Id uuid.UUID
+}
+
+type DeleteAdminUser struct {
 	Id uuid.UUID
 }
