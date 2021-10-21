@@ -20,6 +20,11 @@ var (
 		Message:   "unauthorized",
 	}
 
+	NoPermissionResponse = ErrorResponse{
+		ErrorCode: pointer.String("A-2"),
+		Message:   "no permission",
+	}
+
 	UserSignInFailedResponse = ErrorResponse{
 		ErrorCode: pointer.String("U-1"),
 		Message:   "unauthorized",

@@ -132,6 +132,7 @@ type CreateAdminRequest struct {
 	Nickname string `json:"nickname" validate:"required,min=2,max=60" example:"광대버기"`
 } // @name CreateAdminRequest
 
+// @Security Auth-Jwt-Bearer
 // @Summary Admin 유저 생성
 // @Description Admin 유저를 생성하는 기능
 // @Accept json
@@ -179,5 +180,5 @@ func (h *HttpHandler) Bind(e *echo.Echo) {
 	e.PATCH("/user/admin/pw", h.updateAdminPassword, debug.JwtBypassOnDebug())
 
 	//create admin
-	e.POST("/user/admin", h.createAdmin)
+	e.POST("/user/admin", h.createAdmin, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
 }
