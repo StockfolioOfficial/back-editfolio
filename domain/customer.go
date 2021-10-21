@@ -16,3 +16,7 @@ type Customer struct {
 	OnedriveLink   string    `gorm:"size:2048;not null"`
 	Memo           string    `gorm:"type:text;not null"`
 }
+
+func (Customer) TableName() string {
+	return "customer"
+}

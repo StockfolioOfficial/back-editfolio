@@ -14,7 +14,7 @@ func JwtBypassOnDebug() echo.MiddlewareFunc {
 	return func(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 
 		if config.IsDebug {
-			return handleJwtBypass(handlerFunc)
+			return handleJwtBypass(handlerFunc, nil)
 		}
 
 		return func(ctx echo.Context) error {
@@ -23,10 +23,24 @@ func JwtBypassOnDebug() echo.MiddlewareFunc {
 	}
 }
 
-func handleJwtBypass(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
+func JwtBypassOnDebugWithRole(role domain.UserRole) echo.MiddlewareFunc {
+	return func(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
+
+		if config.IsDebug {
+			return handleJwtBypass(handlerFunc, (*string)(&role))
+		}
+
+		return func(ctx echo.Context) error {
+			return handlerFunc(ctx)
+		}
+	}
+}
+
+func handleJwtBypass(handlerFunc echo.HandlerFunc, role *string) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		var jwtDummy struct {
 			Sub string `json:"sub"`
+			Roles []string `json:"roles"`
 		}
 
 		fullValue := ctx.Request().Header.Get(echo.HeaderAuthorization)
@@ -41,7 +55,21 @@ func handleJwtBypass(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 			return ctx.JSON(http.StatusUnauthorized, domain.InvalidateTokenResponse)
 		}
 
+		if role != nil && !hasRole(jwtDummy.Roles, *role) {
+			return ctx.JSON(http.StatusUnauthorized, domain.NoPermissionResponse)
+		}
+
 		ctx.Request().Header.Set("User-Id", jwtDummy.Sub)
 		return handlerFunc(ctx)
 	}
+}
+
+func hasRole(roles []string, role string) bool {
+	for _, v := range roles {
+		if v == role {
+			return true
+		}
+	}
+
+	return false
 }

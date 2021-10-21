@@ -1,8 +1,9 @@
 package handler
 
 import (
-	"github.com/stockfolioofficial/back-editfolio/core/debug"
 	"net/http"
+
+	"github.com/stockfolioofficial/back-editfolio/core/debug"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -117,6 +118,57 @@ func (h *HttpHandler) updateAdminPassword(ctx echo.Context) error {
 
 }
 
+type CreateAdminRequest struct {
+	// Name, 길이 2~60 제한
+	Name string `json:"name" validate:"required,min=2,max=60" example:"ljs"`
+
+	// Email, 이메일 주소
+	Email string `json:"email" validate:"required,email" example:"example@example.com"`
+
+	// Password, 형식 : 1234qwer!@
+	Password string `json:"password" validate:"required,sf_password" example:"1234qwer!@"`
+
+	// Nickname, 길이 2~60 제한
+	Nickname string `json:"nickname" validate:"required,min=2,max=60" example:"광대버기"`
+} // @name CreateAdminRequest
+
+// @Security Auth-Jwt-Bearer
+// @Summary Admin 유저 생성
+// @Description Admin 유저를 생성하는 기능
+// @Accept json
+// @Produce json
+// @Param AdminUserBody body CreateAdminRequest true "Admin User Body"
+// @Success 201 {object} CreatedCustomerResp
+// @Router /user/admin [post]
+func (h *HttpHandler) createAdmin(ctx echo.Context) error {
+	var req CreateAdminRequest
+
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "create admin, request body bind error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	newId, err := h.useCase.CreateAdminUser(ctx.Request().Context(), domain.CreateAdminUser{
+		Name:     req.Name,
+		Email:    req.Email,
+		Password: req.Password,
+		Nickname: req.Nickname,
+	})
+
+	switch err {
+	case nil:
+		return ctx.JSON(http.StatusCreated, CreatedCustomerResp{Id: newId})
+	case domain.ItemAlreadyExist:
+		return ctx.JSON(http.StatusConflict, domain.ItemExist)
+	default:
+		log.WithError(err).Error(tag, "create admin, unhandled error useCase.CreateAdminUser")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+}
+
 func (h *HttpHandler) Bind(e *echo.Echo) {
 	//CRUD, customer or admin
 	e.POST("/user/customer", h.createCustomer)
@@ -126,4 +178,7 @@ func (h *HttpHandler) Bind(e *echo.Echo) {
 
 	//Update Admin Password
 	e.PATCH("/user/admin/pw", h.updateAdminPassword, debug.JwtBypassOnDebug())
+
+	//create admin
+	e.POST("/user/admin", h.createAdmin, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
 }

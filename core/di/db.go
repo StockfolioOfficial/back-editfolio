@@ -5,6 +5,8 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func NewDatabase() (db *gorm.DB) {
@@ -32,7 +34,7 @@ func NewDatabase() (db *gorm.DB) {
 		panic(err)
 	}
 
-	sqlDB.SetMaxIdleConns(15)
-	sqlDB.SetMaxOpenConns(15)
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(10)
 	return
 }
