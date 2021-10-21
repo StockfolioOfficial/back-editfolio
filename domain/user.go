@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stockfolioofficial/back-editfolio/util/gormx"
+	"github.com/stockfolioofficial/back-editfolio/util/pointer"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -54,8 +55,16 @@ func (u *User) ComparePassword(plainPass string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(plainPass)) == nil
 }
 
-func (u *User) IsAdminRole() bool {
-	return u.Role == AdminUserRole
+func (u *User) IsCustomer() bool {
+	return u.HasRole(CustomerUserRole)
+}
+
+func (u *User) IsAdmin() bool {
+	return u.HasRole(AdminUserRole)
+}
+
+func (u *User) HasRole(role UserRole) bool {
+	return u.Role == role
 }
 
 func (u *User) IsDeleted() bool {
@@ -70,6 +79,10 @@ func (u *User) UpdatePassword(plainPass string) {
 
 func (u *User) stampUpdate() {
 	u.UpdatedAt = time.Now()
+}
+
+func (u *User) Delete() {
+	u.DeletedAt = pointer.Time(time.Now())
 }
 
 type UserRepository interface {
@@ -112,10 +125,15 @@ type CreateAdminUser struct {
 type UserUseCase interface {
 	CreateCustomerUser(ctx context.Context, cu CreateCustomerUser) (uuid.UUID, error)
 	UpdateAdminPassword(ctx context.Context, up UpdateAdminPassword) error
-	SignInUser(ctx context.Context, si SignInUser) (string, error)
-	CreateAdminUser(ctx context.Context, au CreateAdminUser) (uuid.UUID, error)
+	SignInUser(ctx context.Context, si SignInUser) (string, error
+	DeleteCustomerUser(ctx context.Context, du DeleteCustomerUser) error
+	CreateAdminUser(ctx context.Context, au CreateAdminUser) (uuid.UUID, error
 }
 
 type TokenGenerateAdapter interface {
 	Generate(User) (string, error)
+}
+
+type DeleteCustomerUser struct {
+	Id uuid.UUID
 }

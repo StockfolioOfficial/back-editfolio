@@ -37,7 +37,6 @@ func (r *repo) GetByUsername(ctx context.Context, username string) (user *domain
 
 func (r *repo) GetById(ctx context.Context, userId uuid.UUID) (user *domain.User, err error) {
 	var entity domain.User
-
 	err = r.db.WithContext(ctx).First(&entity, userId).Error
 	if err == gorm.ErrRecordNotFound {
 		err = nil
@@ -64,4 +63,8 @@ func (r *repo) Transaction(ctx context.Context, fn func(userRepo domain.UserTxRe
 
 func (r *repo) With(tx gormx.Tx) domain.UserTxRepository {
 	return &repo{db: tx.Get()}
+}
+
+func (r *repo) Delete(ctx context.Context, user *domain.User) error {
+	return r.db.WithContext(ctx).Delete(user).Error
 }

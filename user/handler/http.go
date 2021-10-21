@@ -78,6 +78,44 @@ func (h *HttpHandler) createCustomer(ctx echo.Context) error {
 	}
 }
 
+type DeleteCustomerRequest struct {
+	// Id, 유저 Id
+	Id uuid.UUID `param:"userId" json:"-" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+} //@name DeleteCustomerRequest
+
+// @Security Auth-Jwt-Bearer
+// @Summary 고객 유저 삭제
+// @Description 고객 유저를 삭제하는 기능
+// @Accept json
+// @Produce json
+// @Param customerUserBody body DeleteCustomerRequest true "Customer User Body"
+// @Success 204
+// @Router /user/customer/:userId [delete]
+func (h *HttpHandler) deleteCustomerUser(ctx echo.Context) error {
+	var req DeleteCustomerRequest
+
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "delete customer, request body bind error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+	err = h.useCase.DeleteCustomerUser(ctx.Request().Context(), domain.DeleteCustomerUser{
+		Id: req.Id,
+	})
+
+	switch err {
+	case nil:
+		return ctx.JSON(http.StatusNoContent, domain.ErrorResponse{Message: err.Error()})
+	case domain.ItemNotFound:
+		return ctx.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
+	default:
+		log.WithError(err).Error(tag, "delete customer failed")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+}
+
 // @Security Auth-Jwt-Bearer
 // @Summary 어드민 비밀번호 수정
 // @Description 어드민 유저의 비밀번호를 수정하는 API
@@ -115,7 +153,6 @@ func (h *HttpHandler) updateAdminPassword(ctx echo.Context) error {
 		log.WithError(err).Error(tag, "update password, unhandled error useCase.UpdateAdminPassword")
 		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
 	}
-
 }
 
 type CreateAdminRequest struct {
@@ -172,9 +209,11 @@ func (h *HttpHandler) createAdmin(ctx echo.Context) error {
 func (h *HttpHandler) Bind(e *echo.Echo) {
 	//CRUD, customer or admin
 	e.POST("/user/customer", h.createCustomer)
-
 	//sign, auth
 	e.POST("/user/sign", h.signInUser)
+
+	// todo debug.JwtBypassOnDebugWithRole 추후 추가해주세요
+	e.DELETE("/user/customer/:userId", h.deleteCustomerUser)
 
 	//Update Admin Password
 	e.PATCH("/user/admin/pw", h.updateAdminPassword, debug.JwtBypassOnDebug())
