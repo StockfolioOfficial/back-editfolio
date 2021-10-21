@@ -1,8 +1,9 @@
 package handler
 
 import (
-	"github.com/stockfolioofficial/back-editfolio/core/debug"
 	"net/http"
+
+	"github.com/stockfolioofficial/back-editfolio/core/debug"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
