@@ -31,6 +31,10 @@ type User struct {
 	Manager   *Manager   `gorm:"foreignKey:Id"`
 }
 
+func (User) TableName() string {
+	return "user"
+}
+
 type UserCreateOption struct {
 	Role     UserRole
 	Username string
@@ -111,11 +115,19 @@ type UpdateAdminPassword struct {
 	UserId      uuid.UUID
 }
 
+type CreateAdminUser struct {
+	Name     string
+	Email    string
+	Password string
+	Nickname string
+}
+
 type UserUseCase interface {
 	CreateCustomerUser(ctx context.Context, cu CreateCustomerUser) (uuid.UUID, error)
 	UpdateAdminPassword(ctx context.Context, up UpdateAdminPassword) error
-	SignInUser(ctx context.Context, si SignInUser) (string, error)
+	SignInUser(ctx context.Context, si SignInUser) (string, error
 	DeleteCustomerUser(ctx context.Context, du DeleteCustomerUser) error
+	CreateAdminUser(ctx context.Context, au CreateAdminUser) (uuid.UUID, error
 }
 
 type TokenGenerateAdapter interface {
