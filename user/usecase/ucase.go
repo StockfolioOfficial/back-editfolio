@@ -65,6 +65,17 @@ func (u *ucase) UpdateAdminPassword(ctx context.Context, up domain.UpdateAdminPa
 	return u.userRepo.Save(c, user)
 }
 
+func (u *ucase) UpdateAdminInfo(ctx context.Context, ui domain.UpdateAdminInfo) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	user, err := u.managerRepo.GetById(ctx, ui.UserId)
+	if user == nil || u.IsDeleted() || !user.IsAdmin() {
+
+	}
+
+}
+
 func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (token string, err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
