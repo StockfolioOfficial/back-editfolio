@@ -65,6 +65,10 @@ func (u *User) IsAdmin() bool {
 	return u.HasRole(AdminUserRole)
 }
 
+func (u *User) IsSuperAdmin() bool {
+	return u.HasRole(SuperAdminUserRole)
+}
+
 func (u *User) HasRole(role UserRole) bool {
 	return u.Role == role
 }
@@ -130,6 +134,7 @@ type UserUseCase interface {
 	SignInUser(ctx context.Context, si SignInUser) (string, error)
 	DeleteCustomerUser(ctx context.Context, du DeleteCustomerUser) error
 	CreateAdminUser(ctx context.Context, au CreateAdminUser) (uuid.UUID, error)
+	DeleteAdminUser(ctx context.Context, da DeleteAdminUser) error
 }
 
 type TokenGenerateAdapter interface {
@@ -137,5 +142,9 @@ type TokenGenerateAdapter interface {
 }
 
 type DeleteCustomerUser struct {
+	Id uuid.UUID
+}
+
+type DeleteAdminUser struct {
 	Id uuid.UUID
 }
