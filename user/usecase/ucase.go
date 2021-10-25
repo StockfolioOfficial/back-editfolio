@@ -175,7 +175,7 @@ func (u *ucase) DeleteAdminUser(ctx context.Context, da domain.DeleteAdminUser) 
 
 	user, err := u.userRepo.GetById(c, da.Id)
 
-	if user == nil || !user.IsSuperAdmin() {
+	if user == nil || user.IsDeleted() || !user.IsAdmin() {
 		err = domain.ItemNotFound
 		return
 	}
