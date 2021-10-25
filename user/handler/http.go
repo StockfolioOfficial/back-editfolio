@@ -304,7 +304,7 @@ func (h *HttpHandler) Bind(e *echo.Echo) {
 	e.PATCH("/user/admin/pw", h.updateAdminPassword, debug.JwtBypassOnDebug())
 
 	//Update Admin Infomation
-	e.PUT("/user/admin", h.updateAdmin, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
+	e.PUT("/user/admin", h.updateAdmin, debug.JwtBypassOnDebugWithRole(domain.CustomerUserRole))
 
 	//create admin
 	e.POST("/user/admin", h.createAdmin, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))

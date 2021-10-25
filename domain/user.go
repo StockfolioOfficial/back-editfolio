@@ -33,9 +33,9 @@ type User struct {
 	Ticket    []Order    `gorm:"foreignKey:assignee"`
 }
 
-func (User) TableName() string {
-	return "user"
-}
+// func (User) TableName() string {
+// 	return "user"
+// }
 
 type UserCreateOption struct {
 	Role     UserRole
