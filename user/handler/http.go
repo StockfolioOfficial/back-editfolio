@@ -209,16 +209,16 @@ func (h *HttpHandler) createAdmin(ctx echo.Context) error {
 type DeleteAdminRequest struct {
 	// Id, 어드민 Id
 	Id uuid.UUID `param:"adminId" json:"-" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
-} //@name DeleteAdminRequest
+}
 
 // @Security Auth-Jwt-Bearer
 // @Summary 어드민 유저 삭제
 // @Description 어드민 유저를 삭제하는 기능
 // @Accept json
 // @Produce json
-// @Param DeleteAdminRequest path string true "Admin User Parameter"
+// @Param user_id path string true "Admin User Id"
 // @Success 204
-// @Router /user/admin/:adminId [delete]
+// @Router /user/admin/{user_id} [delete]
 func (h *HttpHandler) deleteAdminUser(ctx echo.Context) error {
 	var req DeleteAdminRequest
 
