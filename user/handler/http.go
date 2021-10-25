@@ -273,8 +273,8 @@ func (h *HttpHandler) updateAdmin(ctx echo.Context) error {
 
 	err = h.useCase.UpdateAdminInfo(ctx.Request().Context(), domain.UpdateAdminInfo{
 		UserId:   uuid.MustParse(req.UserId),
-		Name:     req.Email,
-		Username: req.Name,
+		Name:     req.Name,
+		Username: req.Email,
 		Nickname: req.Nickname,
 	})
 
@@ -304,7 +304,7 @@ func (h *HttpHandler) Bind(e *echo.Echo) {
 	e.PATCH("/user/admin/pw", h.updateAdminPassword, debug.JwtBypassOnDebug())
 
 	//Update Admin Infomation
-	e.PUT("/user/admin", h.updateAdmin, debug.JwtBypassOnDebugWithRole(domain.CustomerUserRole))
+	e.PUT("/user/admin", h.updateAdmin, debug.JwtBypassOnDebug())
 
 	//create admin
 	e.POST("/user/admin", h.createAdmin, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))

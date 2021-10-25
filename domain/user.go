@@ -33,9 +33,9 @@ type User struct {
 	Ticket    []Order    `gorm:"foreignKey:assignee"`
 }
 
-// func (User) TableName() string {
-// 	return "user"
-// }
+func (User) TableName() string {
+	return "user"
+}
 
 type UserCreateOption struct {
 	Role     UserRole
@@ -51,6 +51,18 @@ func CreateUser(option UserCreateOption) User {
 		UpdatedAt: time.Now(),
 		DeletedAt: nil,
 	}
+}
+
+func (u *User) LoadManagerInfo(ctx context.Context, repo ManagerRepository) (err error) {
+	u.Manager, err = repo.GetById(ctx, u.Id)
+	if err != nil {
+		return
+	}
+
+	if u.Manager == nil {
+		err = ItemNotFound
+	}
+	return
 }
 
 func (u *User) ComparePassword(plainPass string) bool {
@@ -74,11 +86,11 @@ func (u *User) HasRole(role UserRole) bool {
 }
 
 func (u *User) IsDeleted() bool {
-	return u.DeletedAt == nil
+	return u.DeletedAt != nil
 }
 
 func ExistsAdmin(u *User) bool {
-	return !(u == nil || u.IsDeleted() || !u.IsAdmin())
+	return u != nil && !u.IsDeleted() && u.IsAdmin()
 }
 
 func (u *User) UpdatePassword(plainPass string) {
@@ -87,11 +99,14 @@ func (u *User) UpdatePassword(plainPass string) {
 	u.stampUpdate()
 }
 
-func (u *User) UpdateAdminInfomation(adminInfo *UpdateAdminInfo) {
-	u.Username = adminInfo.Username
-	u.Manager.Nickname = adminInfo.Nickname
-	u.Manager.Name = adminInfo.Name
-	u.stampUpdate()
+func (u *User) UpdateManagerInfo(username, name, nickname string) {
+	defer u.stampUpdate()
+	u.Username = username
+	if u.Manager == nil {
+		return
+	}
+	u.Manager.Name = name
+	u.Manager.Nickname = nickname
 }
 
 func (u *User) stampUpdate() {

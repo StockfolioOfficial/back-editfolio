@@ -51,7 +51,7 @@ func (u *ucase) UpdateAdminPassword(ctx context.Context, up domain.UpdateAdminPa
 	defer cancel()
 
 	user, err := u.userRepo.GetById(c, up.UserId)
-	if domain.ExistsAdmin(user) {
+	if !domain.ExistsAdmin(user) {
 		err = domain.ItemNotFound
 		return
 	}
@@ -69,20 +69,44 @@ func (u *ucase) UpdateAdminInfo(ctx context.Context, ui domain.UpdateAdminInfo) 
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
-	user, err := u.userRepo.GetById(c, ui.UserId)
+	exists, err := u.userRepo.GetByUsername(c, ui.Username)
+	if err != nil {
+		return
+	}
 
-	if domain.ExistsAdmin(user) {
+	var user *domain.User
+	if exists != nil {
+		if exists.Id == ui.UserId {
+			user = exists
+		} else {
+			err = domain.ItemAlreadyExist
+			return
+		}
+	}
+
+	if user == nil {
+		user, err = u.userRepo.GetById(c, ui.UserId)
+		if err != nil {
+			return
+		}
+	}
+
+	if !domain.ExistsAdmin(user) {
 		err = domain.ItemNotFound
 		return
 	}
 
-	if user.Username == ui.Username {
-		err = domain.ItemAlreadyExist
+	err = user.LoadManagerInfo(c, u.managerRepo)
+	if err != nil {
 		return
 	}
 
-	user.UpdateAdminInfomation(&ui)
-	return u.userRepo.Save(c, user)
+	user.UpdateManagerInfo(ui.Username, ui.Name, ui.Nickname)
+	err = u.userRepo.Save(c, user)
+	if err != nil {
+		return
+	}
+	return u.managerRepo.Save(c, user.Manager)
 }
 
 func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (token string, err error) {
