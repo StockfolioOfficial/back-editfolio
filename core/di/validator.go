@@ -15,7 +15,7 @@ func newValidator() (v *validator.Validate) {
 }
 
 var (
-	mobileRegex    = regexp.MustCompile(`"^010\\d{8}$"`)
+	mobileRegex    = regexp.MustCompile("^010\\d{8}$")
 	passwordRegex  = regexp.MustCompile("[A-Za-z]")
 	passwordRegex1 = regexp.MustCompile("[0-9]")
 )

@@ -100,11 +100,11 @@ type UserTxRepository interface {
 	gormx.Tx
 }
 
-type CreateCustomerUser struct {
-	Name   string
-	Email  string
-	Mobile string
-}
+// type CreateCustomerUser struct {
+// 	Name   string
+// 	Email  string
+// 	Mobile string
+// }
 
 type SignInUser struct {
 	Username string
@@ -124,8 +124,20 @@ type CreateAdminUser struct {
 	Nickname string
 }
 
+type CreateCustomerInformation struct {
+	Name           string
+	ChannelName    string
+	ChannelLink    string
+	Email          string
+	Mobile         string
+	OrderableCount int
+	PersonaLink    string
+	OnedriveLink   string
+	Memo           string
+}
+
 type UserUseCase interface {
-	CreateCustomerUser(ctx context.Context, cu CreateCustomerUser) (uuid.UUID, error)
+	CreateCustomerUser(ctx context.Context, cu CreateCustomerInformation) (uuid.UUID, error)
 	UpdateAdminPassword(ctx context.Context, up UpdateAdminPassword) error
 	SignInUser(ctx context.Context, si SignInUser) (string, error)
 	DeleteCustomerUser(ctx context.Context, du DeleteCustomerUser) error

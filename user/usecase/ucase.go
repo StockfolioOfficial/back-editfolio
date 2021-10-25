@@ -14,12 +14,14 @@ func NewUserUseCase(
 	userRepo domain.UserRepository,
 	tokenAdapter domain.TokenGenerateAdapter,
 	managerRepo domain.ManagerRepository,
+	customerRepo domain.CustomerRepository,
 	timeout time.Duration,
 ) domain.UserUseCase {
 	return &ucase{
 		userRepo:     userRepo,
 		tokenAdapter: tokenAdapter,
 		managerRepo:  managerRepo,
+		customerRepo: customerRepo,
 		timeout:      timeout,
 	}
 }
@@ -28,21 +30,62 @@ type ucase struct {
 	userRepo     domain.UserRepository
 	tokenAdapter domain.TokenGenerateAdapter
 	managerRepo  domain.ManagerRepository
+	customerRepo domain.CustomerRepository
 	timeout      time.Duration
 }
 
-func (u *ucase) CreateCustomerUser(ctx context.Context, cu domain.CreateCustomerUser) (newId uuid.UUID, err error) {
+// func (u *ucase) CreateCustomerUser(ctx context.Context, cu domain.CreateCustomerUser) (newId uuid.UUID, err error) {
+// 	c, cancel := context.WithTimeout(ctx, u.timeout)
+// 	defer cancel()
+
+// 	var user = createUser(domain.CustomerUserRole, cu.Email, cu.Mobile)
+// 	err = u.userRepo.Transaction(c, func(ur domain.UserTxRepository) error {
+// 		return ur.Save(c, &user)
+// 		//TODO customer 테이블 만들어서 연결필요
+// 	})
+
+// 	newId = user.Id
+
+// 	return
+// }
+
+func (u *ucase) CreateCustomerUser(ctx context.Context, ci domain.CreateCustomerInformation) (newId uuid.UUID, err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
-	var user = createUser(domain.CustomerUserRole, cu.Email, cu.Mobile)
-	err = u.userRepo.Transaction(c, func(ur domain.UserTxRepository) error {
-		return ur.Save(c, &user)
-		//TODO customer 테이블 만들어서 연결필요
+	email, err := u.userRepo.GetByUsername(c, ci.Email)
+
+	if email != nil {
+		err = domain.ItemAlreadyExist
+		return
+	}
+
+	var user = createUser(domain.CustomerUserRole, ci.Email, ci.Mobile)
+	var customer = domain.CreateCustomer(domain.CustomerCreateOption{
+		User:           &user,
+		Name:           ci.Name,
+		ChannelName:    ci.ChannelName,
+		ChannelLink:    ci.ChannelLink,
+		Email:          ci.Email,
+		Mobile:         ci.Mobile,
+		OrderableCount: ci.OrderableCount,
+		PersonaLink:    ci.PersonaLink,
+		OnedriveLink:   ci.OnedriveLink,
+		Memo:           ci.Memo,
 	})
 
+	err = u.userRepo.Transaction(c, func(ur domain.UserTxRepository) error {
+		mr := u.customerRepo.With(ur)
+		g, gc := errgroup.WithContext(c)
+		g.Go(func() error {
+			return ur.Save(gc, &user)
+		})
+		g.Go(func() error {
+			return mr.Save(gc, &customer)
+		})
+		return g.Wait()
+	})
 	newId = user.Id
-
 	return
 }
 

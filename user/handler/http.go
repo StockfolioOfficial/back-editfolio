@@ -27,11 +27,29 @@ type CreateCustomerRequest struct {
 	// Name, 길이 2~60 제한
 	Name string `json:"name" validate:"required,min=2,max=60" example:"ljs"`
 
+	// ChannelName, 길이 2~100 제한
+	ChannelName string `json:"channelName" example:"밥굽남"`
+
+	// ChannelLink, 길이 2048 제한
+	ChannelLink string `json:"channelLink" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
+
 	// Email, 이메일 주소
 	Email string `json:"email" validate:"required,email" example:"example@example.com"`
 
 	// Mobile, 형식 : 01012345678
 	Mobile string `json:"mobile" validate:"required,sf_mobile" example:"01012345678"`
+
+	//OrderableCount, 주문 가능 횟수
+	//OrderableCount int `json:"orderableCount" default: "4" example: "4"`
+
+	//PersonaLink, 길이 2048 제한
+	PersonaLink string `json:"personaLink" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
+
+	//OnedriveLink, 길이 2048 제한
+	OnedriveLink string `json:"onedriveLink" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
+
+	//Memo, 형식 : text
+	//Memo string `json:"Memo" example:"편집 잘 부탁 드립니다. 따로 요청 사항은 없어요~"`
 } // @name CreateCustomerUserRequest
 
 type CreatedCustomerResp struct {
@@ -63,10 +81,16 @@ func (h *HttpHandler) createCustomer(ctx echo.Context) error {
 		})
 	}
 
-	newId, err := h.useCase.CreateCustomerUser(ctx.Request().Context(), domain.CreateCustomerUser{
-		Name:   req.Name,
-		Email:  req.Email,
-		Mobile: req.Mobile,
+	newId, err := h.useCase.CreateCustomerUser(ctx.Request().Context(), domain.CreateCustomerInformation{
+		Name:        req.Name,
+		ChannelName: req.ChannelName,
+		ChannelLink: req.ChannelLink,
+		Email:       req.Email,
+		Mobile:      req.Mobile,
+		//OrderableCount: req.OrderableCount,
+		PersonaLink:  req.PersonaLink,
+		OnedriveLink: req.OnedriveLink,
+		//Memo:           req.Memo,
 	})
 
 	switch err {
