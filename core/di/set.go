@@ -1,9 +1,12 @@
 package di
 
 import (
+	repository2 "github.com/stockfolioofficial/back-editfolio/manager/repository"
+	handler3 "github.com/stockfolioofficial/back-editfolio/order/handler"
+	repository4 "github.com/stockfolioofficial/back-editfolio/order/repository"
+	usecase2 "github.com/stockfolioofficial/back-editfolio/order/usecase"
 	"time"
 
-	repository2 "github.com/stockfolioofficial/back-editfolio/manager/repository"
 
 	"github.com/google/wire"
 	"github.com/stockfolioofficial/back-editfolio/core/app"
@@ -44,16 +47,19 @@ var adapterSet = wire.NewSet(
 var repositorySet = wire.NewSet(
 	repository.NewUserRepository,
 	repository2.NewManagerRepository,
-	repository3.NewCustomerRepository,
+	repository3.NewOrderRepository,
+	repository4.NewCustomerRepository,
 )
 
 var useCaseSet = wire.NewSet(
 	usecase.NewUserUseCase,
+	usecase2.NewOrderUseCase,
 )
 
 var handlerSet = wire.NewSet(
 	handler.NewHelloWorldHttpHandler,
 	handler2.NewUserHttpHandler,
+	handler3.NewOrderHttpHandler,
 )
 
 var lifecycleSet = wire.NewSet(
