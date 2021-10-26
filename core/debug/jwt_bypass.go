@@ -1,13 +1,15 @@
 package debug
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"net/http"
+	"strings"
+
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/stockfolioofficial/back-editfolio/core/config"
 	"github.com/stockfolioofficial/back-editfolio/domain"
-	"net/http"
-	"strings"
 )
 
 func JwtBypassOnDebug() echo.MiddlewareFunc {
@@ -39,7 +41,7 @@ func JwtBypassOnDebugWithRole(role domain.UserRole) echo.MiddlewareFunc {
 func handleJwtBypass(handlerFunc echo.HandlerFunc, role *string) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		var jwtDummy struct {
-			Sub string `json:"sub"`
+			Sub   string   `json:"sub"`
 			Roles []string `json:"roles"`
 		}
 
@@ -49,7 +51,12 @@ func handleJwtBypass(handlerFunc echo.HandlerFunc, role *string) echo.HandlerFun
 			return ctx.JSON(http.StatusUnauthorized, domain.InvalidateTokenResponse)
 		}
 
-		err := json.Unmarshal([]byte(parts[1]), &jwtDummy)
+		decodedPart, err := base64.RawURLEncoding.DecodeString(parts[1])
+		if err != nil {
+			log.WithError(err).Error("bypass, jwt payload base64 decode failed")
+			return ctx.JSON(http.StatusUnauthorized, domain.InvalidateTokenResponse)
+		}
+		err = json.Unmarshal(decodedPart, &jwtDummy)
 		if err != nil {
 			log.WithError(err).Error("bypass, jwt payload unmarshal failed")
 			return ctx.JSON(http.StatusUnauthorized, domain.InvalidateTokenResponse)
