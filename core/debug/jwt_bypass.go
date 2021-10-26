@@ -57,7 +57,7 @@ func handleJwtBypass(handlerFunc echo.HandlerFunc, role *string) echo.HandlerFun
 			return ctx.JSON(http.StatusUnauthorized, domain.InvalidateTokenResponse)
 		}
     
-		err = json.Unmarshal(decoded_jwt, &jwtDummy)
+		err = json.Unmarshal(decodedPart, &jwtDummy)
 		if err != nil {
 			log.WithError(err).Error("bypass, jwt payload unmarshal failed")
 			return ctx.JSON(http.StatusUnauthorized, domain.InvalidateTokenResponse)
