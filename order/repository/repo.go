@@ -22,6 +22,8 @@ type repo struct {
 }
 
 func (r *repo) Save(ctx context.Context, order *domain.Order) error {
+	//TODO refactor
+	//return gormx.Upsert(ctx, r.db, order)
 	return r.db.WithContext(ctx).Save(order).Error
 }
 
