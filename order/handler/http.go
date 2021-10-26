@@ -35,7 +35,7 @@ type VideoEditRequirementRequest struct {
 // @Produce json
 // @Param videoEditRequirementBody body VideoEditRequirementRequest true "Video Edit Requirement Body"
 // @Success 201
-// @Router /order/requirement [post]
+// @Router /order [post]
 func (h *HttpHandler) VideoEditRequirement(ctx echo.Context) error {
 	var req VideoEditRequirementRequest
 
@@ -65,5 +65,5 @@ func (h *HttpHandler) VideoEditRequirement(ctx echo.Context) error {
 
 func (h *HttpHandler) Bind(e *echo.Echo) {
 	//Video Edit Requirement
-	e.POST("/order/requirement", h.VideoEditRequirement)
+	e.POST("/order", h.VideoEditRequirement)
 }

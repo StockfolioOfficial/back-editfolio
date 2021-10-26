@@ -66,7 +66,3 @@ func (o *Order) LoadOrderInfo(ctx context.Context, repo OrderRepository) (err er
 	}
 	return
 }
-
-func (o *Order) UpdateVideoEditRequirement(requirement string) {
-	o.Requirement = requirement
-}
