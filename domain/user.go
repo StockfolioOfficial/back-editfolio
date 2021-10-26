@@ -65,7 +65,7 @@ func (u *User) LoadManagerInfo(ctx context.Context, repo ManagerRepository) (err
 	}
 
 	if u.Manager == nil {
-		err = ItemNotFound
+		err = ErrItemNotFound
 	}
 	return
 }
@@ -101,7 +101,7 @@ func (u *User) LoadCustomerInfo(ctx context.Context, repo CustomerRepository) (e
 	}
 
 	if u.Customer == nil {
-		err = ItemNotFound
+		err = ErrItemNotFound
 	}
 	return
 }
