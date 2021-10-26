@@ -29,7 +29,7 @@ type User struct {
 	DeletedAt *time.Time `gorm:"size:6;index"`
 	Customer  *Customer  `gorm:"foreignKey:Id"`
 	Manager   *Manager   `gorm:"foreignKey:Id"`
-	MyJob     []Order    `gorm:"foreignKey:orderer"`
+	MyOrder   []Order    `gorm:"foreignKey:orderer"`
 	Ticket    []Order    `gorm:"foreignKey:assignee"`
 }
 
@@ -77,9 +77,20 @@ func (u *User) IsDeleted() bool {
 	return u.DeletedAt == nil
 }
 
+func ExistsAdmin(u *User) bool {
+	return !(u == nil || u.IsDeleted() || !u.IsAdmin())
+}
+
 func (u *User) UpdatePassword(plainPass string) {
 	generated, _ := bcrypt.GenerateFromPassword([]byte(plainPass), bcrypt.DefaultCost+2)
 	u.Password = string(generated)
+	u.stampUpdate()
+}
+
+func (u *User) UpdateAdminInfomation(adminInfo *UpdateAdminInfo) {
+	u.Username = adminInfo.Username
+	u.Manager.Nickname = adminInfo.Nickname
+	u.Manager.Name = adminInfo.Name
 	u.stampUpdate()
 }
 

@@ -51,7 +51,7 @@ func (u *ucase) UpdateAdminPassword(ctx context.Context, up domain.UpdateAdminPa
 	defer cancel()
 
 	user, err := u.userRepo.GetById(c, up.UserId)
-	if user == nil || user.IsDeleted() || !user.IsAdmin() {
+	if domain.ExistsAdmin(user) {
 		err = domain.ItemNotFound
 		return
 	}
@@ -69,11 +69,20 @@ func (u *ucase) UpdateAdminInfo(ctx context.Context, ui domain.UpdateAdminInfo) 
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
-	user, err := u.managerRepo.GetById(ctx, ui.UserId)
-	if user == nil || u.IsDeleted() || !user.IsAdmin() {
+	user, err := u.userRepo.GetById(c, ui.UserId)
 
+	if domain.ExistsAdmin(user) {
+		err = domain.ItemNotFound
+		return
 	}
 
+	if user.Username == ui.Username {
+		err = domain.ItemAlreadyExist
+		return
+	}
+
+	user.UpdateAdminInfomation(&ui)
+	return u.userRepo.Save(c, user)
 }
 
 func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (token string, err error) {
