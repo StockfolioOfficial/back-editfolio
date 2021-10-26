@@ -106,14 +106,6 @@ func (u *User) LoadCustomerInfo(ctx context.Context, repo CustomerRepository) (e
 	return
 }
 
-func ExistsAdmin(u *User) bool {
-	return u != nil && !u.IsDeleted() && u.IsAdmin()
-}
-
-func ExistsCustomer(u *User) bool {
-	return u != nil && !u.IsDeleted() && u.IsCustomer()
-}
-
 func (u *User) UpdatePassword(plainPass string) {
 	generated, _ := bcrypt.GenerateFromPassword([]byte(plainPass), bcrypt.DefaultCost+2)
 	u.Password = string(generated)
@@ -160,6 +152,10 @@ func (u *User) UpdateCustomerInfo(name, channelName, channelLink, email, mobile,
 	customer.PersonaLink = personaLink
 	customer.OnedriveLink = onedriveLink
 	customer.Memo = memo
+}
+
+func ExistsAdmin(u *User) bool {
+	return u != nil && !u.IsDeleted() && u.IsAdmin()
 }
 
 func ExistsCustomer(u *User) bool {
