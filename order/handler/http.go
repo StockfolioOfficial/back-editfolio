@@ -1,9 +1,10 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/stockfolioofficial/back-editfolio/core/debug"
 	"github.com/stockfolioofficial/back-editfolio/util/echox"
-	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -15,7 +16,7 @@ const (
 	tag = "[ORDER] "
 )
 
-func NewOrderHttpHandler(useCase domain.OrderUseCase) *OrderController {
+func NewOrderController(useCase domain.OrderUseCase) *OrderController {
 	return &OrderController{useCase: useCase}
 }
 
@@ -61,7 +62,7 @@ func (c *OrderController) createOrder(ctx echo.Context, userId uuid.UUID) error 
 		return ctx.JSON(http.StatusCreated, CreateOrderResponse{OrderId: orderId})
 	case domain.ErrNoPermission:
 		return ctx.JSON(http.StatusUnauthorized, domain.NoPermissionResponse)
-	case domain.ItemAlreadyExist:
+	case domain.ErrItemAlreadyExist:
 		return ctx.JSON(http.StatusConflict, domain.ErrorResponse{Message: err.Error()})
 	default:
 		log.WithError(err).Error(tag, "video requirement failed")

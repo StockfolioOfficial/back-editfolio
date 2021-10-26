@@ -7,15 +7,15 @@ import (
 )
 
 var (
-	ItemNotFound = errors.New("item not found")
+	ErrItemNotFound = errors.New("item not found")
 
-	UserWrongPassword = errors.New("wrong password")
+	ErrUserWrongPassword = errors.New("wrong password")
 
-	UserNotAdmin = errors.New("not admin")
+	ErrUserNotAdmin = errors.New("not admin")
 
 	ErrNoPermission = errors.New("no permission")
 
-	ItemAlreadyExist = errors.New("item already exsits")
+	ErrItemAlreadyExist = errors.New("item already exsits")
 
 	InvalidateTokenResponse = ErrorResponse{
 		ErrorCode: pointer.String("A-1"),
@@ -24,7 +24,7 @@ var (
 
 	NoPermissionResponse = ErrorResponse{
 		ErrorCode: pointer.String("A-2"),
-		Message:   "no permission",
+		Message:   ErrNoPermission.Error(),
 	}
 
 	UserSignInFailedResponse = ErrorResponse{
@@ -34,12 +34,12 @@ var (
 
 	UserWrongPasswordToUpdatePassword = ErrorResponse{
 		ErrorCode: pointer.String("U-2"),
-		Message:   UserWrongPassword.Error(),
+		Message:   ErrUserWrongPassword.Error(),
 	}
 
 	ItemExist = ErrorResponse{
 		ErrorCode: pointer.String("U-3"),
-		Message:   ItemAlreadyExist.Error(),
+		Message:   ErrItemAlreadyExist.Error(),
 	}
 
 	EmailExistsResponse = ErrorResponse{

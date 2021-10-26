@@ -1,8 +1,9 @@
 package handler
 
 import (
-	"github.com/stockfolioofficial/back-editfolio/util/echox"
 	"net/http"
+
+	"github.com/stockfolioofficial/back-editfolio/util/echox"
 
 	"github.com/stockfolioofficial/back-editfolio/core/debug"
 
@@ -16,11 +17,11 @@ const (
 	tag = "[USER] "
 )
 
-func NewUserHttpHandler(useCase domain.UserUseCase) *HttpHandler {
-	return &HttpHandler{useCase: useCase}
+func NewUserHttpHandler(useCase domain.UserUseCase) *UserController {
+	return &UserController{useCase: useCase}
 }
 
-type HttpHandler struct {
+type UserController struct {
 	useCase domain.UserUseCase
 }
 
@@ -59,7 +60,7 @@ type UdpateAdminInfomationRequest struct {
 // @Param customerUserBody body CreateCustomerRequest true "Customer User Body"
 // @Success 201 {object} CreatedCustomerResp "유저 생성"
 // @Router /customer [post]
-func (h *HttpHandler) createCustomer(ctx echo.Context) error {
+func (h *UserController) createCustomer(ctx echo.Context) error {
 	var req CreateCustomerRequest
 
 	err := ctx.Bind(&req)
@@ -123,7 +124,7 @@ type UpdateCustomerRequest struct {
 // @Param customerUserBody body UpdateCustomerRequest true "Customer User Body"
 // @Success 204 "수정 완료"
 // @Router /customer/{user_id} [put]
-func (h *HttpHandler) updateCustomer(ctx echo.Context) error {
+func (h *UserController) updateCustomer(ctx echo.Context) error {
 	var req UpdateCustomerRequest
 
 	err := ctx.Bind(&req)
@@ -149,10 +150,10 @@ func (h *HttpHandler) updateCustomer(ctx echo.Context) error {
 	switch err {
 	case nil:
 		return ctx.NoContent(http.StatusNoContent)
-	case domain.ItemNotFound:
-		return ctx.JSON(http.StatusNotFound, domain.ItemNotFound)
-	case domain.ItemAlreadyExist:
-		return ctx.JSON(http.StatusConflict, domain.ItemAlreadyExist)
+	case domain.ErrItemNotFound:
+		return ctx.JSON(http.StatusNotFound, domain.ErrItemNotFound)
+	case domain.ErrItemAlreadyExist:
+		return ctx.JSON(http.StatusConflict, domain.ErrItemAlreadyExist)
 	default:
 		log.WithError(err).Error(tag, "update customer, unhandled error useCase.UpdateCustomerUser")
 		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
@@ -172,7 +173,7 @@ type DeleteCustomerRequest struct {
 // @Param user_id path string true "Customer User Id"
 // @Success 204 "삭제 완료"
 // @Router /customer/{user_id} [delete]
-func (h *HttpHandler) deleteCustomerUser(ctx echo.Context) error {
+func (h *UserController) deleteCustomerUser(ctx echo.Context) error {
 	var req DeleteCustomerRequest
 
 	err := ctx.Bind(&req)
@@ -189,7 +190,7 @@ func (h *HttpHandler) deleteCustomerUser(ctx echo.Context) error {
 	switch err {
 	case nil:
 		return ctx.JSON(http.StatusNoContent, domain.ErrorResponse{Message: err.Error()})
-	case domain.ItemNotFound:
+	case domain.ErrItemNotFound:
 		return ctx.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
 	default:
 		log.WithError(err).Error(tag, "delete customer failed")
@@ -205,7 +206,7 @@ func (h *HttpHandler) deleteCustomerUser(ctx echo.Context) error {
 // @Param updateAdminPassword body UpdatePasswordRequest true "Update Admin Password"
 // @Success 204 "비밀번호 변경 성공"
 // @Router /admin/me/pw [patch]
-func (h *HttpHandler) updateAdminPassword(ctx echo.Context, userId uuid.UUID) error {
+func (h *UserController) updateAdminPassword(ctx echo.Context, userId uuid.UUID) error {
 	var req UpdatePasswordRequest
 	err := ctx.Bind(&req)
 	if err != nil {
@@ -224,9 +225,9 @@ func (h *HttpHandler) updateAdminPassword(ctx echo.Context, userId uuid.UUID) er
 	switch err {
 	case nil:
 		return ctx.NoContent(http.StatusNoContent)
-	case domain.UserWrongPassword:
+	case domain.ErrUserWrongPassword:
 		return ctx.JSON(http.StatusUnauthorized, domain.UserWrongPasswordToUpdatePassword)
-	case domain.ItemNotFound:
+	case domain.ErrItemNotFound:
 		return ctx.JSON(http.StatusUnauthorized, domain.ErrorResponse{Message: err.Error()})
 	default:
 		log.WithError(err).Error(tag, "update password, unhandled error useCase.UpdateAdminPassword")
@@ -256,7 +257,7 @@ type CreateAdminRequest struct {
 // @Param AdminUserBody body CreateAdminRequest true "Admin User Body"
 // @Success 201 {object} CreatedCustomerResp
 // @Router /admin [post]
-func (h *HttpHandler) createAdmin(ctx echo.Context) error {
+func (h *UserController) createAdmin(ctx echo.Context) error {
 	var req CreateAdminRequest
 
 	err := ctx.Bind(&req)
@@ -277,7 +278,7 @@ func (h *HttpHandler) createAdmin(ctx echo.Context) error {
 	switch err {
 	case nil:
 		return ctx.JSON(http.StatusCreated, CreatedCustomerResp{Id: newId})
-	case domain.ItemAlreadyExist:
+	case domain.ErrItemAlreadyExist:
 		return ctx.JSON(http.StatusConflict, domain.ItemExist)
 	default:
 		log.WithError(err).Error(tag, "create admin, unhandled error useCase.CreateAdminUser")
@@ -298,7 +299,7 @@ type DeleteAdminRequest struct {
 // @Param user_id path string true "Admin User Id"
 // @Success 204
 // @Router /admin/{user_id} [delete]
-func (h *HttpHandler) deleteAdminUser(ctx echo.Context) error {
+func (h *UserController) deleteAdminUser(ctx echo.Context) error {
 	var req DeleteAdminRequest
 
 	err := ctx.Bind(&req)
@@ -315,7 +316,7 @@ func (h *HttpHandler) deleteAdminUser(ctx echo.Context) error {
 	switch err {
 	case nil:
 		return ctx.JSON(http.StatusNoContent, domain.ErrorResponse{Message: err.Error()})
-	case domain.ItemNotFound:
+	case domain.ErrItemNotFound:
 		return ctx.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
 	default:
 		log.WithError(err).Error(tag, "delete customer failed")
@@ -331,7 +332,7 @@ func (h *HttpHandler) deleteAdminUser(ctx echo.Context) error {
 // @Param updateAdmin body UdpateAdminInfomationRequest true "Update Admin Info"
 // @Success 204 "정보 수정 성공"
 // @Router /user/admin [put]
-func (h *HttpHandler) updateAdmin(ctx echo.Context, userId uuid.UUID) error {
+func (h *UserController) updateAdmin(ctx echo.Context, userId uuid.UUID) error {
 	var req UdpateAdminInfomationRequest
 
 	err := ctx.Bind(&req)
@@ -359,9 +360,9 @@ func (h *HttpHandler) updateAdmin(ctx echo.Context, userId uuid.UUID) error {
 	switch err {
 	case nil:
 		return ctx.NoContent(http.StatusNoContent)
-	case domain.ItemNotFound:
+	case domain.ErrItemNotFound:
 		return ctx.JSON(http.StatusUnauthorized, domain.ErrorResponse{Message: err.Error()})
-	case domain.ItemAlreadyExist:
+	case domain.ErrItemAlreadyExist:
 		return ctx.JSON(http.StatusConflict, domain.ItemExist)
 	default:
 		log.WithError(err).Error(tag, "create admin, unhandled error useCase.UpdateAdminInfo")
@@ -387,7 +388,7 @@ type UpdateAdminInfoRequest struct {
 // @Param user_id path string true "어드민 유저 식별 아이디"
 // @Success 204 "어드민 정보 수정 성공"
 // @Router /admin/{user_id} [put]
-func (h *HttpHandler) updateAdminBySuperAdmin(ctx echo.Context) error {
+func (h *UserController) updateAdminBySuperAdmin(ctx echo.Context) error {
 	var req UpdateAdminInfoRequest
 
 	err := ctx.Bind(&req)
@@ -409,9 +410,9 @@ func (h *HttpHandler) updateAdminBySuperAdmin(ctx echo.Context) error {
 	switch err {
 	case nil:
 		return ctx.NoContent(http.StatusNoContent)
-	case domain.ItemNotFound:
+	case domain.ErrItemNotFound:
 		return ctx.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
-	case domain.ItemAlreadyExist:
+	case domain.ErrItemAlreadyExist:
 		return ctx.JSON(http.StatusConflict, domain.EmailExistsResponse)
 	default:
 		log.WithError(err).Error(tag, "force-update admin, unhandled error useCase.ForceUpdateAdminInfoBySuperAdmin")
@@ -419,7 +420,7 @@ func (h *HttpHandler) updateAdminBySuperAdmin(ctx echo.Context) error {
 	}
 }
 
-func (h *HttpHandler) Bind(e *echo.Echo) {
+func (h *UserController) Bind(e *echo.Echo) {
 	// get token
 	e.POST("/sign-in", h.signInUser)
 

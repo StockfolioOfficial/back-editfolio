@@ -14,8 +14,8 @@ import (
 func OnStart(
 	e *echo.Echo,
 	mw middlewares,
-	helloWorld *handler.HttpHandler,
-	user *handler2.HttpHandler,
+	helloWorld *handler.HelloWorldController,
+	user *handler2.UserController,
 	order *handler3.OrderController,
 ) app.OnStart {
 	return func() error {

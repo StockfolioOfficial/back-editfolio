@@ -11,8 +11,8 @@ import (
 
 func NewOrderUseCase(
 	orderRepo domain.OrderRepository,
-	userRepo  domain.UserRepository,
-	timeout   time.Duration,
+	userRepo domain.UserRepository,
+	timeout time.Duration,
 ) domain.OrderUseCase {
 	return &ucase{
 		orderRepo: orderRepo,
@@ -47,7 +47,7 @@ func (u *ucase) RequestOrder(ctx context.Context, or domain.RequestOrder) (newId
 	}
 
 	if exists != nil {
-		err = domain.ItemAlreadyExist
+		err = domain.ErrItemAlreadyExist
 		return
 	}
 
