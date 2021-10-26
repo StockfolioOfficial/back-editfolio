@@ -45,7 +45,6 @@ type UpdatePasswordRequest struct {
 	NewPassword string `json:"newPassword" validate:"required,sf_password" example:"pass1234!@"`
 } // @name UpdatePasswordRequest
 
-<<<<<<< HEAD
 type UdpateAdminInfomationRequest struct {
 	UserId   string `json:"-" header:"User-Id" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Email    string `json:"email" validate:"required,email" example:"example@example.com"`
@@ -61,9 +60,7 @@ type ForceUpdateAdminInfomationRequest struct {
 	Nickname string `json:"nickname" validate:"required,min=2,max=60" example:"nickname"`
 } // @name ForceUpdateAdminInfomationRequest
 
-=======
 // @Security Auth-Jwt-Bearer
->>>>>>> 8b469052a45fef6007bb9dd27ae8926653065572
 // @Summary 고객 유저 생성
 // @Description 고객 유저를 생성하는 기능
 // @Accept json
@@ -337,14 +334,6 @@ func (h *HttpHandler) deleteAdminUser(ctx echo.Context) error {
 	}
 }
 
-
-type UdpateAdminInfomationRequest struct {
-	UserId   string `json:"-" header:"User-Id" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
-	Email    string `json:"email" validate:"required,email" example:"example@example.com"`
-	Name     string `json:"name" validate:"required,min=2,max=60" example:"sch"`
-	Nickname string `json:"nickname" validate:"required,min=2,max=60" example:"nickname"`
-} // @name UpdateAdminInfomationRequest
-
 // @Security Auth-Jwt-Bearer
 // @Summary 어드민 정보 수정
 // @Description 어드민 유저의 정보를 수정하는 API
@@ -447,12 +436,8 @@ func (h *HttpHandler) updateAdminBySuperAdmin(ctx echo.Context) error {
 
 func (h *HttpHandler) Bind(e *echo.Echo) {
 	//CRUD, customer or admin
-<<<<<<< HEAD
-	e.POST("/user/customer", h.createCustomer)
-=======
 	e.POST("/user/customer", h.createCustomer, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
 	e.PUT("/user/customer/:userId", h.updateCustomer, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
->>>>>>> 8b469052a45fef6007bb9dd27ae8926653065572
 
 	//sign, auth
 	e.POST("/user/sign", h.signInUser)
