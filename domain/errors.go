@@ -13,6 +13,8 @@ var (
 
 	UserNotAdmin = errors.New("not admin")
 
+	ErrNoPermission = errors.New("no permission")
+
 	ItemAlreadyExist = errors.New("item already exsits")
 
 	InvalidateTokenResponse = ErrorResponse{

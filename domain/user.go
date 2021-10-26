@@ -29,8 +29,8 @@ type User struct {
 	DeletedAt *time.Time `gorm:"size:6;index"`
 	Customer  *Customer  `gorm:"foreignKey:Id"`
 	Manager   *Manager   `gorm:"foreignKey:Id"`
-	MyOrder   []Order    `gorm:"foreignKey:orderer"`
-	Ticket    []Order    `gorm:"foreignKey:assignee"`
+	MyJob     []Order    `gorm:"foreignKey:Orderer"`
+	Ticket    []Order    `gorm:"foreignKey:Assignee"`
 }
 
 func (User) TableName() string {
@@ -108,6 +108,10 @@ func (u *User) LoadCustomerInfo(ctx context.Context, repo CustomerRepository) (e
 
 func ExistsAdmin(u *User) bool {
 	return u != nil && !u.IsDeleted() && u.IsAdmin()
+}
+
+func ExistsCustomer(u *User) bool {
+	return u != nil && !u.IsDeleted() && u.IsCustomer()
 }
 
 func (u *User) UpdatePassword(plainPass string) {
