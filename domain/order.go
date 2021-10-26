@@ -15,9 +15,15 @@ type Order struct {
 	Orderer     uuid.UUID  `gorm:"type:char(36);index;not null"`
 	EditCount   uint16     `gorm:"not null"`
 	EditTotal   uint16     `gorm:"not null"`
+	State       uint8      `gorm:"not null"`
 	DueDate     *time.Time `gorm:"type:date"`
 	Assignee    *uuid.UUID `gorm:"type:char(36);index"`
 	Requirement *string    `gorm:"size:2000"`
+}
+
+type OrderState struct {
+	Id      uint8   `gorm:"primaryKey"` // AutoIncreament 설정 ?
+	Content []Order `gorm:"foreignKey:State"`
 }
 
 type CreateOrderOption struct {
