@@ -45,6 +45,7 @@ type UpdatePasswordRequest struct {
 	NewPassword string `json:"newPassword" validate:"required,sf_password" example:"pass1234!@"`
 } // @name UpdatePasswordRequest
 
+<<<<<<< HEAD
 type UdpateAdminInfomationRequest struct {
 	UserId   string `json:"-" header:"User-Id" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Email    string `json:"email" validate:"required,email" example:"example@example.com"`
@@ -60,12 +61,15 @@ type ForceUpdateAdminInfomationRequest struct {
 	Nickname string `json:"nickname" validate:"required,min=2,max=60" example:"nickname"`
 } // @name ForceUpdateAdminInfomationRequest
 
+=======
+// @Security Auth-Jwt-Bearer
+>>>>>>> 8b469052a45fef6007bb9dd27ae8926653065572
 // @Summary 고객 유저 생성
 // @Description 고객 유저를 생성하는 기능
 // @Accept json
 // @Produce json
 // @Param customerUserBody body CreateCustomerRequest true "Customer User Body"
-// @Success 201 {object} CreatedCustomerResp
+// @Success 201 {object} CreatedCustomerResp "유저 생성"
 // @Router /user/customer [post]
 func (h *HttpHandler) createCustomer(ctx echo.Context) error {
 	var req CreateCustomerRequest
@@ -93,6 +97,80 @@ func (h *HttpHandler) createCustomer(ctx echo.Context) error {
 	}
 }
 
+type UpdateCustomerRequest struct {
+	// UserId,
+	UserId uuid.UUID `json:"-" param:"userId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+
+	// Name, 길이 2~60 제한
+	Name string `json:"name" validate:"required,min=2,max=60" example:"ljs"`
+
+	// ChannelName, 길이 2~100 제한
+	ChannelName string `json:"channelName" validate:"required,min=2,max=100" example:"밥굽남"`
+
+	// ChannelLink, 길이 2048 제한
+	ChannelLink string `json:"channelLink" validate:"required,max=2048" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
+
+	// Email, 이메일 주소
+	Email string `json:"email" validate:"required,email" example:"example@example.com"`
+
+	// Mobile, 형식 : 01012345678
+	Mobile string `json:"mobile" validate:"required,sf_mobile" example:"01012345678"`
+
+	//PersonaLink, 길이 2048 제한
+	PersonaLink string `json:"personaLink" validate:"required,max=2048" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
+
+	//OnedriveLink, 길이 2048 제한
+	OnedriveLink string `json:"onedriveLink" validate:"required,max=2048" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
+
+	//Memo, 형식 : text
+	Memo string `json:"memo" example:"이사람 까다로움"`
+} //@name UpdateCustomerUserRequest
+
+// @Security Auth-Jwt-Bearer
+// @Summary 고객 유저 정보 수정하는 기능
+// @Description 고객 유저 정보 수정하는 기능
+// @Accept json
+// @Produce json
+// @Param user_id path string true "Customer User Id"
+// @Param customerUserBody body UpdateCustomerRequest true "Customer User Body"
+// @Success 204 "수정 완료"
+// @Router /user/customer/{user_id} [put]
+func (h *HttpHandler) updateCustomer(ctx echo.Context) error {
+	var req UpdateCustomerRequest
+
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "update customer, request body bind error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	err = h.useCase.UpdateCustomerUser(ctx.Request().Context(), domain.UpdateCustomerUser{
+		UserId:       req.UserId,
+		Name:         req.Name,
+		ChannelName:  req.ChannelName,
+		ChannelLink:  req.ChannelLink,
+		Email:        req.Email,
+		Mobile:       req.Mobile,
+		PersonaLink:  req.PersonaLink,
+		OnedriveLink: req.OnedriveLink,
+		Memo:         req.Memo,
+	})
+
+	switch err {
+	case nil:
+		return ctx.NoContent(http.StatusNoContent)
+	case domain.ItemNotFound:
+		return ctx.JSON(http.StatusNotFound, domain.ItemNotFound)
+	case domain.ItemAlreadyExist:
+		return ctx.JSON(http.StatusConflict, domain.ItemAlreadyExist)
+	default:
+		log.WithError(err).Error(tag, "update customer, unhandled error useCase.UpdateCustomerUser")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+}
+
 type DeleteCustomerRequest struct {
 	// Id, 유저 Id
 	Id uuid.UUID `param:"userId" json:"-" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
@@ -103,9 +181,9 @@ type DeleteCustomerRequest struct {
 // @Description 고객 유저를 삭제하는 기능
 // @Accept json
 // @Produce json
-// @Param DeleteCustomerRequest path string true "Customer User Parameter"
-// @Success 204
-// @Router /user/customer/:userId [delete]
+// @Param user_id path string true "Customer User Id"
+// @Success 204 "삭제 완료"
+// @Router /user/customer/{user_id} [delete]
 func (h *HttpHandler) deleteCustomerUser(ctx echo.Context) error {
 	var req DeleteCustomerRequest
 
@@ -259,6 +337,14 @@ func (h *HttpHandler) deleteAdminUser(ctx echo.Context) error {
 	}
 }
 
+
+type UdpateAdminInfomationRequest struct {
+	UserId   string `json:"-" header:"User-Id" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Email    string `json:"email" validate:"required,email" example:"example@example.com"`
+	Name     string `json:"name" validate:"required,min=2,max=60" example:"sch"`
+	Nickname string `json:"nickname" validate:"required,min=2,max=60" example:"nickname"`
+} // @name UpdateAdminInfomationRequest
+
 // @Security Auth-Jwt-Bearer
 // @Summary 어드민 정보 수정
 // @Description 어드민 유저의 정보를 수정하는 API
@@ -361,12 +447,16 @@ func (h *HttpHandler) updateAdminBySuperAdmin(ctx echo.Context) error {
 
 func (h *HttpHandler) Bind(e *echo.Echo) {
 	//CRUD, customer or admin
+<<<<<<< HEAD
 	e.POST("/user/customer", h.createCustomer)
+=======
+	e.POST("/user/customer", h.createCustomer, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
+	e.PUT("/user/customer/:userId", h.updateCustomer, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
+>>>>>>> 8b469052a45fef6007bb9dd27ae8926653065572
 
 	//sign, auth
 	e.POST("/user/sign", h.signInUser)
 
-	// todo debug.JwtBypassOnDebugWithRole 추후 추가해주세요
 	e.DELETE("/user/customer/:userId", h.deleteCustomerUser, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
 
 	//Update Admin Password

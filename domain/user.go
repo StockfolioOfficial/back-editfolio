@@ -53,6 +53,11 @@ func CreateUser(option UserCreateOption) User {
 	}
 }
 
+func (u *User) UpdateUsername(username string) {
+	u.Username = username
+	u.stampUpdate()
+}
+
 func (u *User) LoadManagerInfo(ctx context.Context, repo ManagerRepository) (err error) {
 	u.Manager, err = repo.GetById(ctx, u.Id)
 	if err != nil {
@@ -89,6 +94,18 @@ func (u *User) IsDeleted() bool {
 	return u.DeletedAt != nil
 }
 
+func (u *User) LoadCustomerInfo(ctx context.Context, repo CustomerRepository) (err error) {
+	u.Customer, err = repo.GetById(ctx, u.Id)
+	if err != nil {
+		return
+	}
+
+	if u.Customer == nil {
+		err = ItemNotFound
+	}
+	return
+}
+
 func ExistsAdmin(u *User) bool {
 	return u != nil && !u.IsDeleted() && u.IsAdmin()
 }
@@ -96,6 +113,10 @@ func ExistsAdmin(u *User) bool {
 func (u *User) UpdatePassword(plainPass string) {
 	generated, _ := bcrypt.GenerateFromPassword([]byte(plainPass), bcrypt.DefaultCost+2)
 	u.Password = string(generated)
+	u.stampUpdate()
+}
+
+func (u *User) StampUpdate() {
 	u.stampUpdate()
 }
 
@@ -115,6 +136,30 @@ func (u *User) stampUpdate() {
 
 func (u *User) Delete() {
 	u.DeletedAt = pointer.Time(time.Now())
+}
+
+func (u *User) UpdateCustomerInfo(name, channelName, channelLink, email, mobile, personaLink, onedriveLink, memo string) {
+	defer u.stampUpdate()
+	u.UpdateUsername(email)
+	u.UpdatePassword(mobile)
+
+	var customer = u.Customer
+	if customer == nil {
+		return
+	}
+
+	customer.Name = name
+	customer.ChannelName = channelName
+	customer.ChannelLink = channelLink
+	customer.Email = email
+	customer.Mobile = mobile
+	customer.PersonaLink = personaLink
+	customer.OnedriveLink = onedriveLink
+	customer.Memo = memo
+}
+
+func ExistsCustomer(u *User) bool {
+	return u != nil && !u.IsDeleted() && u.IsCustomer()
 }
 
 type UserRepository interface {
@@ -169,8 +214,21 @@ type CreateAdminUser struct {
 	Nickname string
 }
 
+type UpdateCustomerUser struct {
+	UserId       uuid.UUID
+	Name         string
+	ChannelName  string
+	ChannelLink  string
+	Email        string
+	Mobile       string
+	PersonaLink  string
+	OnedriveLink string
+	Memo         string
+}
+
 type UserUseCase interface {
 	CreateCustomerUser(ctx context.Context, cu CreateCustomerUser) (uuid.UUID, error)
+	UpdateCustomerUser(ctx context.Context, cu UpdateCustomerUser) error
 	UpdateAdminPassword(ctx context.Context, up UpdateAdminPassword) error
 	UpdateAdminInfo(ctx context.Context, ui UpdateAdminInfo) error
 	ForceUpdateAdminInfoBySuperAdmin(ctx context.Context, fu ForceUpdateAdminInfo) error
