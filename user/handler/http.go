@@ -17,7 +17,7 @@ const (
 	tag = "[USER] "
 )
 
-func NewUserHttpHandler(useCase domain.UserUseCase) *UserController {
+func NewUserController(useCase domain.UserUseCase) *UserController {
 	return &UserController{useCase: useCase}
 }
 
