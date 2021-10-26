@@ -88,7 +88,7 @@ type DeleteCustomerRequest struct {
 // @Description 고객 유저를 삭제하는 기능
 // @Accept json
 // @Produce json
-// @Param customerUserBody body DeleteCustomerRequest true "Customer User Body"
+// @Param DeleteCustomerRequest path string true "Customer User Parameter"
 // @Success 204
 // @Router /user/customer/:userId [delete]
 func (h *HttpHandler) deleteCustomerUser(ctx echo.Context) error {
@@ -206,6 +206,44 @@ func (h *HttpHandler) createAdmin(ctx echo.Context) error {
 	}
 }
 
+type DeleteAdminRequest struct {
+	// Id, 어드민 Id
+	Id uuid.UUID `param:"adminId" json:"-" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+}
+
+// @Security Auth-Jwt-Bearer
+// @Summary 어드민 유저 삭제
+// @Description 어드민 유저를 삭제하는 기능
+// @Accept json
+// @Produce json
+// @Param user_id path string true "Admin User Id"
+// @Success 204
+// @Router /user/admin/{user_id} [delete]
+func (h *HttpHandler) deleteAdminUser(ctx echo.Context) error {
+	var req DeleteAdminRequest
+
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "delete admin, request body error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+	err = h.useCase.DeleteAdminUser(ctx.Request().Context(), domain.DeleteAdminUser{
+		Id: req.Id,
+	})
+
+	switch err {
+	case nil:
+		return ctx.JSON(http.StatusNoContent, domain.ErrorResponse{Message: err.Error()})
+	case domain.ItemNotFound:
+		return ctx.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
+	default:
+		log.WithError(err).Error(tag, "delete customer failed")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+}
+
 func (h *HttpHandler) Bind(e *echo.Echo) {
 	//CRUD, customer or admin
 	e.POST("/user/customer", h.createCustomer)
@@ -213,11 +251,14 @@ func (h *HttpHandler) Bind(e *echo.Echo) {
 	e.POST("/user/sign", h.signInUser)
 
 	// todo debug.JwtBypassOnDebugWithRole 추후 추가해주세요
-	e.DELETE("/user/customer/:userId", h.deleteCustomerUser)
+	e.DELETE("/user/customer/:userId", h.deleteCustomerUser, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
 
 	//Update Admin Password
 	e.PATCH("/user/admin/pw", h.updateAdminPassword, debug.JwtBypassOnDebug())
 
 	//create admin
 	e.POST("/user/admin", h.createAdmin, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
+
+	//Delete admin
+	e.DELETE("/user/admin/:adminId", h.deleteAdminUser, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
 }

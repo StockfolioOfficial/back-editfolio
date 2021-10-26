@@ -168,3 +168,18 @@ func createUser(role domain.UserRole, username, password string) (user domain.Us
 	user.UpdatePassword(password)
 	return
 }
+
+func (u *ucase) DeleteAdminUser(ctx context.Context, da domain.DeleteAdminUser) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	user, err := u.userRepo.GetById(c, da.Id)
+
+	if user == nil || user.IsDeleted() || !user.IsAdmin() {
+		err = domain.ItemNotFound
+		return
+	}
+
+	user.Delete()
+	return u.userRepo.Save(ctx, user)
+}
