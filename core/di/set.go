@@ -1,23 +1,21 @@
 package di
 
 import (
-	repository2 "github.com/stockfolioofficial/back-editfolio/manager/repository"
-	handler3 "github.com/stockfolioofficial/back-editfolio/order/handler"
-	repository4 "github.com/stockfolioofficial/back-editfolio/order/repository"
-	usecase2 "github.com/stockfolioofficial/back-editfolio/order/usecase"
-	"time"
-
-
 	"github.com/google/wire"
 	"github.com/stockfolioofficial/back-editfolio/core/app"
 	"github.com/stockfolioofficial/back-editfolio/core/config"
 	repository3 "github.com/stockfolioofficial/back-editfolio/customer/repository"
 	"github.com/stockfolioofficial/back-editfolio/domain"
 	"github.com/stockfolioofficial/back-editfolio/helloworld/handler"
+	repository2 "github.com/stockfolioofficial/back-editfolio/manager/repository"
+	handler3 "github.com/stockfolioofficial/back-editfolio/order/handler"
+	repository4 "github.com/stockfolioofficial/back-editfolio/order/repository"
+	usecase2 "github.com/stockfolioofficial/back-editfolio/order/usecase"
 	"github.com/stockfolioofficial/back-editfolio/user/adapter"
 	handler2 "github.com/stockfolioofficial/back-editfolio/user/handler"
 	"github.com/stockfolioofficial/back-editfolio/user/repository"
 	"github.com/stockfolioofficial/back-editfolio/user/usecase"
+	"time"
 )
 
 var DI = wire.NewSet(
@@ -47,8 +45,8 @@ var adapterSet = wire.NewSet(
 var repositorySet = wire.NewSet(
 	repository.NewUserRepository,
 	repository2.NewManagerRepository,
-	repository3.NewOrderRepository,
-	repository4.NewCustomerRepository,
+	repository3.NewCustomerRepository,
+	repository4.NewOrderRepository,
 )
 
 var useCaseSet = wire.NewSet(
