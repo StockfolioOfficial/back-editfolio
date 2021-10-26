@@ -38,9 +38,9 @@ func (u *ucase) CreateCustomerUser(ctx context.Context, cu domain.CreateCustomer
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
-	email, err := u.userRepo.GetByUsername(c, cu.Email)
+	exists, err := u.userRepo.GetByUsername(c, cu.Email)
 
-	if email != nil {
+	if exists != nil {
 		err = domain.ItemAlreadyExist
 		return
 	}

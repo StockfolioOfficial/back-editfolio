@@ -51,7 +51,7 @@ type UpdatePasswordRequest struct {
 // @Accept json
 // @Produce json
 // @Param customerUserBody body CreateCustomerRequest true "Customer User Body"
-// @Success 201 {object} CreatedCustomerResp
+// @Success 201 {object} CreatedCustomerResp "유저 생성"
 // @Router /user/customer [post]
 func (h *HttpHandler) createCustomer(ctx echo.Context) error {
 	var req CreateCustomerRequest
@@ -81,16 +81,16 @@ func (h *HttpHandler) createCustomer(ctx echo.Context) error {
 
 type UpdateCustomerRequest struct {
 	// UserId,
-	UserId uuid.UUID `json:"userId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	UserId uuid.UUID `json:"-" param:"userId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 
 	// Name, 길이 2~60 제한
 	Name string `json:"name" validate:"required,min=2,max=60" example:"ljs"`
 
 	// ChannelName, 길이 2~100 제한
-	ChannelName string `json:"channelName" example:"밥굽남"`
+	ChannelName string `json:"channelName" validate:"required,min=2,max=100" example:"밥굽남"`
 
 	// ChannelLink, 길이 2048 제한
-	ChannelLink string `json:"channelLink" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
+	ChannelLink string `json:"channelLink" validate:"required,max=2048" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
 
 	// Email, 이메일 주소
 	Email string `json:"email" validate:"required,email" example:"example@example.com"`
@@ -99,27 +99,24 @@ type UpdateCustomerRequest struct {
 	Mobile string `json:"mobile" validate:"required,sf_mobile" example:"01012345678"`
 
 	//PersonaLink, 길이 2048 제한
-	PersonaLink string `json:"personaLink" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
+	PersonaLink string `json:"personaLink" validate:"required,max=2048" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
 
 	//OnedriveLink, 길이 2048 제한
-	OnedriveLink string `json:"onedriveLink" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
+	OnedriveLink string `json:"onedriveLink" validate:"required,max=2048" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
 
 	//Memo, 형식 : text
-	Memo string `json:"Memo" example:"편집 잘 부탁 드립니다. 따로 요청 사항은 없어요~"`
-} //@name UpdadteCustomerUserRequest
-
-type UpdateCustomerResp struct {
-	Message string `json:"emial" example:"wecode@naver.com"`
-} // @name UpdateCustomerResponse
+	Memo string `json:"memo" example:"이사람 까다로움"`
+} //@name UpdateCustomerUserRequest
 
 // @Security Auth-Jwt-Bearer
-// @Summary 고객 유저 정보 입력
-// @Description 고객 유저 정보 입력하는 기능
+// @Summary 고객 유저 정보 수정하는 기능
+// @Description 고객 유저 정보 수정하는 기능
 // @Accept json
 // @Produce json
+// @Param user_id path string true "Customer User Id"
 // @Param customerUserBody body UpdateCustomerRequest true "Customer User Body"
-// @Success 201 {object} CreatedCustomerResp
-// @Router /user/customer [patch]
+// @Success 204 "수정 완료"
+// @Router /user/customer/{user_id} [put]
 func (h *HttpHandler) updateCustomer(ctx echo.Context) error {
 	var req UpdateCustomerRequest
 
@@ -145,7 +142,7 @@ func (h *HttpHandler) updateCustomer(ctx echo.Context) error {
 
 	switch err {
 	case nil:
-		return ctx.JSON(http.StatusOK, UpdateCustomerResp{Message: "SUCCESS"})
+		return ctx.NoContent(http.StatusNoContent)
 	case domain.ItemNotFound:
 		return ctx.JSON(http.StatusNotFound, domain.ItemNotFound)
 	case domain.ItemAlreadyExist:
@@ -166,9 +163,9 @@ type DeleteCustomerRequest struct {
 // @Description 고객 유저를 삭제하는 기능
 // @Accept json
 // @Produce json
-// @Param customerUserBody body DeleteCustomerRequest true "Customer User Body"
-// @Success 204
-// @Router /user/customer/:userId [delete]
+// @Param user_id path string true "Customer User Id"
+// @Success 204 "삭제 완료"
+// @Router /user/customer/{user_id} [delete]
 func (h *HttpHandler) deleteCustomerUser(ctx echo.Context) error {
 	var req DeleteCustomerRequest
 
@@ -287,13 +284,12 @@ func (h *HttpHandler) createAdmin(ctx echo.Context) error {
 func (h *HttpHandler) Bind(e *echo.Echo) {
 	//CRUD, customer or admin
 	e.POST("/user/customer", h.createCustomer, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
-	e.PATCH("/user/customer", h.updateCustomer, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
+	e.PUT("/user/customer/:userId", h.updateCustomer, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
 
 	//sign, auth
 	e.POST("/user/sign", h.signInUser)
 
-	// todo debug.JwtBypassOnDebugWithRole 추후 추가해주세요
-	e.DELETE("/user/customer/:userId", h.deleteCustomerUser)
+	e.DELETE("/user/customer/:userId", h.deleteCustomerUser, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
 
 	//Update Admin Password
 	e.PATCH("/user/admin/pw", h.updateAdminPassword, debug.JwtBypassOnDebug())
