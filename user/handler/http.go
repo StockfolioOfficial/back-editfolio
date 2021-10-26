@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/stockfolioofficial/back-editfolio/util/echox"
 	"net/http"
 
 	"github.com/stockfolioofficial/back-editfolio/core/debug"
@@ -39,11 +40,16 @@ type CreatedCustomerResp struct {
 } // @name CreatedCustomerResponse
 
 type UpdatePasswordRequest struct {
-	UserId string `json:"-" header:"User-Id" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 	// Mobile, 형식 : 01012345678
-	OldPassword string `json:"oldPassword" validate:"required" example:"01012345678"`
-	NewPassword string `json:"newPassword" validate:"required" example:"01087654321"`
+	OldPassword string `json:"oldPassword" validate:"required,sf_password" example:"abcd1234!@"`
+	NewPassword string `json:"newPassword" validate:"required,sf_password" example:"pass1234!@"`
 } // @name UpdatePasswordRequest
+
+type UdpateAdminInfomationRequest struct {
+	Email    string `json:"email" validate:"required,email" example:"example@example.com"`
+	Name     string `json:"name" validate:"required,min=2,max=60" example:"sch"`
+	Nickname string `json:"nickname" validate:"required,min=2,max=60" example:"nickname"`
+} // @name UpdateAdminInfomationRequest
 
 // @Security Auth-Jwt-Bearer
 // @Summary 고객 유저 생성
@@ -52,7 +58,7 @@ type UpdatePasswordRequest struct {
 // @Produce json
 // @Param customerUserBody body CreateCustomerRequest true "Customer User Body"
 // @Success 201 {object} CreatedCustomerResp "유저 생성"
-// @Router /user/customer [post]
+// @Router /customer [post]
 func (h *HttpHandler) createCustomer(ctx echo.Context) error {
 	var req CreateCustomerRequest
 
@@ -116,7 +122,7 @@ type UpdateCustomerRequest struct {
 // @Param user_id path string true "Customer User Id"
 // @Param customerUserBody body UpdateCustomerRequest true "Customer User Body"
 // @Success 204 "수정 완료"
-// @Router /user/customer/{user_id} [put]
+// @Router /customer/{user_id} [put]
 func (h *HttpHandler) updateCustomer(ctx echo.Context) error {
 	var req UpdateCustomerRequest
 
@@ -165,7 +171,7 @@ type DeleteCustomerRequest struct {
 // @Produce json
 // @Param user_id path string true "Customer User Id"
 // @Success 204 "삭제 완료"
-// @Router /user/customer/{user_id} [delete]
+// @Router /customer/{user_id} [delete]
 func (h *HttpHandler) deleteCustomerUser(ctx echo.Context) error {
 	var req DeleteCustomerRequest
 
@@ -198,11 +204,9 @@ func (h *HttpHandler) deleteCustomerUser(ctx echo.Context) error {
 // @Produce json
 // @Param updateAdminPassword body UpdatePasswordRequest true "Update Admin Password"
 // @Success 204 "비밀번호 변경 성공"
-// @Router /user/admin/pw [patch]
-func (h *HttpHandler) updateAdminPassword(ctx echo.Context) error {
+// @Router /admin/me/pw [patch]
+func (h *HttpHandler) updateAdminPassword(ctx echo.Context, userId uuid.UUID) error {
 	var req UpdatePasswordRequest
-
-	req.UserId = ctx.Request().Header.Get("User-Id")
 	err := ctx.Bind(&req)
 	if err != nil {
 		log.WithError(err).Trace(tag, "update password, request body bind error")
@@ -212,7 +216,7 @@ func (h *HttpHandler) updateAdminPassword(ctx echo.Context) error {
 	}
 
 	err = h.useCase.UpdateAdminPassword(ctx.Request().Context(), domain.UpdateAdminPassword{
-		UserId:      uuid.MustParse(req.UserId),
+		UserId:      userId,
 		OldPassword: req.OldPassword,
 		NewPassword: req.NewPassword,
 	})
@@ -251,7 +255,7 @@ type CreateAdminRequest struct {
 // @Produce json
 // @Param AdminUserBody body CreateAdminRequest true "Admin User Body"
 // @Success 201 {object} CreatedCustomerResp
-// @Router /user/admin [post]
+// @Router /admin [post]
 func (h *HttpHandler) createAdmin(ctx echo.Context) error {
 	var req CreateAdminRequest
 
@@ -293,7 +297,7 @@ type DeleteAdminRequest struct {
 // @Produce json
 // @Param user_id path string true "Admin User Id"
 // @Success 204
-// @Router /user/admin/{user_id} [delete]
+// @Router /admin/{user_id} [delete]
 func (h *HttpHandler) deleteAdminUser(ctx echo.Context) error {
 	var req DeleteAdminRequest
 
@@ -319,14 +323,6 @@ func (h *HttpHandler) deleteAdminUser(ctx echo.Context) error {
 	}
 }
 
-
-type UdpateAdminInfomationRequest struct {
-	UserId   string `json:"-" header:"User-Id" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
-	Email    string `json:"email" validate:"required,email" example:"example@example.com"`
-	Name     string `json:"name" validate:"required,min=2,max=60" example:"sch"`
-	Nickname string `json:"nickname" validate:"required,min=2,max=60" example:"nickname"`
-} // @name UpdateAdminInfomationRequest
-
 // @Security Auth-Jwt-Bearer
 // @Summary 어드민 정보 수정
 // @Description 어드민 유저의 정보를 수정하는 API
@@ -335,9 +331,8 @@ type UdpateAdminInfomationRequest struct {
 // @Param updateAdmin body UdpateAdminInfomationRequest true "Update Admin Info"
 // @Success 204 "정보 수정 성공"
 // @Router /user/admin [put]
-func (h *HttpHandler) updateAdmin(ctx echo.Context) error {
+func (h *HttpHandler) updateAdmin(ctx echo.Context, userId uuid.UUID) error {
 	var req UdpateAdminInfomationRequest
-	req.UserId = ctx.Request().Header.Get("User-Id")
 
 	err := ctx.Bind(&req)
 	if err != nil {
@@ -347,8 +342,15 @@ func (h *HttpHandler) updateAdmin(ctx echo.Context) error {
 		})
 	}
 
+	if err != nil {
+		log.WithError(err).Trace(tag, "UUID error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
 	err = h.useCase.UpdateAdminInfo(ctx.Request().Context(), domain.UpdateAdminInfo{
-		UserId:   uuid.MustParse(req.UserId),
+		UserId:   userId,
 		Name:     req.Name,
 		Username: req.Email,
 		Nickname: req.Nickname,
@@ -362,30 +364,85 @@ func (h *HttpHandler) updateAdmin(ctx echo.Context) error {
 	case domain.ItemAlreadyExist:
 		return ctx.JSON(http.StatusConflict, domain.ItemExist)
 	default:
-		log.WithError(err).Error(tag, "create admin, unhandled error useCase.CreateAdminUser")
+		log.WithError(err).Error(tag, "create admin, unhandled error useCase.UpdateAdminInfo")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+}
+
+type UpdateAdminInfoRequest struct {
+	UserId   uuid.UUID `param:"userId" json:"-" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Password string    `json:"password" validate:"required,sf_password" example:"pass1234!@"`
+	Email    string    `json:"email" validate:"required,email" example:"example@example.com"`
+	Name     string    `json:"name" validate:"required,min=2,max=60" example:"sch"`
+	Nickname string    `json:"nickname" validate:"required,min=2,max=60" example:"nickname"`
+} // @name UpdateAdminInfoRequest
+
+// @Security Auth-Jwt-Bearer
+// @Summary [슈퍼어드민] 어드민 정보 수정 기능
+// @Description 슈퍼 어드민이 어드민 유저의 정보를 강제로 수정하는 API
+// @Accept json
+// @Produce json
+// TODO
+// @Param updateAdminBySuperAdmin body UpdateAdminInfoRequest true "설명 추가 필요"
+// @Param user_id path string true "어드민 유저 식별 아이디"
+// @Success 204 "어드민 정보 수정 성공"
+// @Router /admin/{user_id} [put]
+func (h *HttpHandler) updateAdminBySuperAdmin(ctx echo.Context) error {
+	var req UpdateAdminInfoRequest
+
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "force update admin, request body bind error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	err = h.useCase.UpdateAdminInfoBySuperAdmin(ctx.Request().Context(), domain.UpdateAdminInfoBySuperAdmin{
+		UserId:   req.UserId,
+		Password: req.Password,
+		Name:     req.Name,
+		Username: req.Email,
+		Nickname: req.Nickname,
+	})
+
+	switch err {
+	case nil:
+		return ctx.NoContent(http.StatusNoContent)
+	case domain.ItemNotFound:
+		return ctx.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
+	case domain.ItemAlreadyExist:
+		return ctx.JSON(http.StatusConflict, domain.EmailExistsResponse)
+	default:
+		log.WithError(err).Error(tag, "force-update admin, unhandled error useCase.ForceUpdateAdminInfoBySuperAdmin")
 		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
 	}
 }
 
 func (h *HttpHandler) Bind(e *echo.Echo) {
-	//CRUD, customer or admin
-	e.POST("/user/customer", h.createCustomer, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
-	e.PUT("/user/customer/:userId", h.updateCustomer, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
+	// get token
+	e.POST("/sign-in", h.signInUser)
 
-	//sign, auth
-	e.POST("/user/sign", h.signInUser)
+	// ADMIN
+	// Self control
+	// Update my info
+	e.PUT("/admin/me", echox.UserID(h.updateAdmin), debug.JwtBypassOnDebug())
+	// Update admin password
+	e.PATCH("/admin/me/pw", echox.UserID(h.updateAdminPassword), debug.JwtBypassOnDebug())
 
-	e.DELETE("/user/customer/:userId", h.deleteCustomerUser, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
+	// Customer control
+	// Create customer
+	e.POST("/customer", h.createCustomer, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
+	// Update customer
+	e.PUT("/customer/:userId", h.updateCustomer, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
+	// Delete customer
+	e.DELETE("/customer/:userId", h.deleteCustomerUser, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
 
-	//Update Admin Password
-	e.PATCH("/user/admin/pw", h.updateAdminPassword, debug.JwtBypassOnDebug())
-
-	//Update Admin Infomation
-	e.PUT("/user/admin", h.updateAdmin, debug.JwtBypassOnDebug())
-
-	//create admin
-	e.POST("/user/admin", h.createAdmin, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
-
-	//Delete admin
-	e.DELETE("/user/admin/:adminId", h.deleteAdminUser, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
+	// SUPER_ADMIN
+	// Create admin
+	e.POST("/admin", h.createAdmin, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
+	// Update admin info
+	e.PUT("/admin/:userId", h.updateAdminBySuperAdmin, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
+	// Delete admin
+	e.DELETE("/admin/:adminId", h.deleteAdminUser, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
 }
