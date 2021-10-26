@@ -40,6 +40,11 @@ var (
 		Message:   ItemAlreadyExist.Error(),
 	}
 
+	EmailExistsResponse = ErrorResponse{
+		ErrorCode: pointer.String("U-4"),
+		Message:   "email exists",
+	}
+
 	ServerInternalErrorResponse = ErrorResponse{
 		Message: "server internal error",
 	}

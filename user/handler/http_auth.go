@@ -26,7 +26,7 @@ type TokenResponse struct {
 // @Produce json
 // @Param signInUserBody body SignInRequest true "sign in user"
 // @Success 200 {object} TokenResponse
-// @Router /user/sign [post]
+// @Router /sign-in [post]
 func (h *HttpHandler) signInUser(ctx echo.Context) error {
 	var req SignInRequest
 	err := ctx.Bind(&req)

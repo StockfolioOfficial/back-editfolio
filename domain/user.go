@@ -122,7 +122,7 @@ func (u *User) StampUpdate() {
 
 func (u *User) UpdateManagerInfo(username, name, nickname string) {
 	defer u.stampUpdate()
-	u.Username = username
+	u.UpdateUsername(username)
 	if u.Manager == nil {
 		return
 	}
@@ -199,7 +199,7 @@ type UpdateAdminInfo struct {
 	Nickname string
 }
 
-type ForceUpdateAdminInfo struct {
+type UpdateAdminInfoBySuperAdmin struct {
 	UserId   uuid.UUID
 	Name     string
 	Password string
@@ -231,7 +231,7 @@ type UserUseCase interface {
 	UpdateCustomerUser(ctx context.Context, cu UpdateCustomerUser) error
 	UpdateAdminPassword(ctx context.Context, up UpdateAdminPassword) error
 	UpdateAdminInfo(ctx context.Context, ui UpdateAdminInfo) error
-	ForceUpdateAdminInfoBySuperAdmin(ctx context.Context, fu ForceUpdateAdminInfo) error
+	UpdateAdminInfoBySuperAdmin(ctx context.Context, fu UpdateAdminInfoBySuperAdmin) error
 	SignInUser(ctx context.Context, si SignInUser) (string, error)
 	DeleteCustomerUser(ctx context.Context, du DeleteCustomerUser) error
 	CreateAdminUser(ctx context.Context, au CreateAdminUser) (uuid.UUID, error)

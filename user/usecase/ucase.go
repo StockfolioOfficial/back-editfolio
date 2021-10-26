@@ -191,21 +191,19 @@ func (u *ucase) UpdateAdminInfo(ctx context.Context, ui domain.UpdateAdminInfo) 
 	return g.Wait()
 }
 
-func (u *ucase) ForceUpdateAdminInfoBySuperAdmin(ctx context.Context, fu domain.ForceUpdateAdminInfo) (err error) {
+func (u *ucase) UpdateAdminInfoBySuperAdmin(ctx context.Context, fu domain.UpdateAdminInfoBySuperAdmin) (err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
-	admin, err := u.userRepo.GetByUsername(c, fu.Username)
-
+	exists, err := u.userRepo.GetByUsername(c, fu.Username)
 	if err != nil {
 		return
 	}
 
 	var user *domain.User
-
-	if admin != nil {
-		if admin.Id == fu.UserId {
-			user = admin
+	if exists != nil {
+		if exists.Id == fu.UserId {
+			user = exists
 		} else {
 			err = domain.ItemAlreadyExist
 			return
@@ -224,13 +222,12 @@ func (u *ucase) ForceUpdateAdminInfoBySuperAdmin(ctx context.Context, fu domain.
 		return
 	}
 
-	user.UpdatePassword(fu.Password)
-
 	err = user.LoadManagerInfo(c, u.managerRepo)
 	if err != nil {
 		return
 	}
 
+	user.UpdatePassword(fu.Password)
 	user.UpdateManagerInfo(fu.Username, fu.Name, fu.Nickname)
 
 	g, gc := errgroup.WithContext(c)
