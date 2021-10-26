@@ -1,9 +1,12 @@
 package domain
 
 import (
+	"context"
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/stockfolioofficial/back-editfolio/util/gormx"
 )
 
 type Order struct {
@@ -25,4 +28,21 @@ func MakeOrder(orderer string) Order {
 		DueDate:   nil,
 		Assignee:  nil,
 	}
+}
+
+type OrderRepository interface {
+	Save(ctx context.Context, order *Order) error
+	Transaction(ctx context.Context, fn func(orderRepo OrderTxRepository) error, options ...*sql.TxOptions) error
+	With(tx gormx.Tx) OrderTxRepository
+	GetById(ctx context.Context, orderId uuid.UUID) (*Order, error)
+}
+
+type OrderTxRepository interface {
+	OrderRepository
+	gormx.Tx
+}
+
+type VideoEditRequirement struct {
+	Id          uuid.UUID
+	Requirement string
 }
