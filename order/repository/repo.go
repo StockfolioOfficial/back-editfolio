@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"gorm.io/gorm/clause"
 
 	"github.com/google/uuid"
 	"github.com/stockfolioofficial/back-editfolio/domain"
@@ -21,10 +22,26 @@ type repo struct {
 	db *gorm.DB
 }
 
+func (r *repo) GetRecentByOrdererId(ctx context.Context, ordererId uuid.UUID) (order *domain.Order, err error) {
+	var entity domain.Order
+	err = r.db.WithContext(ctx).
+		Order("ordered_at desc").
+		First(&entity).Error
+	if err == gorm.ErrRecordNotFound {
+		err = nil
+		return
+	} else if err == nil {
+		order = &entity
+	}
+	return
+}
+
 func (r *repo) Save(ctx context.Context, order *domain.Order) error {
 	//TODO refactor
 	//return gormx.Upsert(ctx, r.db, order)
-	return r.db.WithContext(ctx).Save(order).Error
+	return r.db.WithContext(ctx).
+		Clauses(clause.OnConflict{UpdateAll: true}).
+		Create(order).Error
 }
 
 func (r *repo) Get() *gorm.DB {
@@ -47,8 +64,8 @@ func (r *repo) GetById(ctx context.Context, orderId uuid.UUID) (order *domain.Or
 	if err == gorm.ErrRecordNotFound {
 		err = nil
 		return
+	} else if err == nil {
+		order = &entity
 	}
-
-	order = &entity
 	return
 }

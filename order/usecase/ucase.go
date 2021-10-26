@@ -9,55 +9,56 @@ import (
 	"github.com/stockfolioofficial/back-editfolio/domain"
 )
 
-type ocase struct {
+func NewOrderUseCase(
+	orderRepo domain.OrderRepository,
+	userRepo  domain.UserRepository,
+	timeout   time.Duration,
+) domain.OrderUseCase {
+	return &ucase{
+		orderRepo: orderRepo,
+		userRepo:  userRepo,
+		timeout:   timeout,
+	}
+}
+
+type ucase struct {
 	orderRepo domain.OrderRepository
 	userRepo  domain.UserRepository
 	timeout   time.Duration
 }
 
-func (o *ocase) CreateOrder(ctx context.Context, or domain.OrderRequirement) (newId uuid.UUID, err error) {
-	c, cancel := context.WithTimeout(ctx, o.timeout)
+func (u *ucase) RequestOrder(ctx context.Context, or domain.RequestOrder) (newId uuid.UUID, err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
-	user, err := o.userRepo.GetById(c, or.UserId)
+	user, err := u.userRepo.GetById(c, or.UserId)
 	if err != nil {
 		return
 	}
 
-	if user == nil || !user.IsCustomer() {
-		err = domain.ItemNotFound
+	if domain.ExistsCustomer(user) {
+		err = domain.ErrNoPermission
+		return
+	}
+
+	exists, err := u.orderRepo.GetRecentByOrdererId(c, or.UserId)
+	if err != nil {
+		return
+	}
+
+	if exists != nil {
+		err = domain.ItemAlreadyExist
 		return
 	}
 
 	var orderOption domain.CreateOrderOption
-
-	if orderOption.Orderer.Id != user.Id {
-		err = domain.ItemNotFound
-		return
-	}
-
+	orderOption.Orderer = *user
 	if len(or.Requirement) > 0 {
 		orderOption.Requirement = &or.Requirement
 	}
 
 	order := domain.CreateOrder(orderOption)
 	newId = order.Id
-	err = o.orderRepo.Save(c, &order)
+	err = u.orderRepo.Save(c, &order)
 	return
-	// resp status 201, response {
-	// 	"orderId": "string,uuid"
-	// }
-	// order, err := o.orderRepo.GetById(c, or.Id)
-	// if order == nil {
-	// 	err = domain.ItemNotFound
-	// 	return
-	// }
-
-	// err = order.LoadOrderInfo(c, o.orderRepo)
-	// if err != nil {
-	// 	return
-	// }
-
-	// order.UpdateVideoEditRequirement(or.Requirement)
-	// return o.orderRepo.Save(c, order)
 }

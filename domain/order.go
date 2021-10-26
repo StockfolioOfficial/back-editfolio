@@ -39,6 +39,7 @@ type OrderRepository interface {
 	Transaction(ctx context.Context, fn func(orderRepo OrderTxRepository) error, options ...*sql.TxOptions) error
 	With(tx gormx.Tx) OrderTxRepository
 	GetById(ctx context.Context, orderId uuid.UUID) (*Order, error)
+	GetRecentByOrdererId(ctx context.Context, ordererId uuid.UUID) (*Order, error)
 }
 
 type OrderTxRepository interface {
@@ -46,24 +47,11 @@ type OrderTxRepository interface {
 	gormx.Tx
 }
 
-type OrderRequirement struct {
-	OrderId     uuid.UUID
+type RequestOrder struct {
 	UserId      uuid.UUID
 	Requirement string
 }
 
 type OrderUseCase interface {
-	VideoEditRequirement(ctx context.Context, or OrderRequirement) error
-}
-
-func (o *Order) LoadOrderInfo(ctx context.Context, repo OrderRepository) (err error) {
-	o, err = repo.GetById(ctx, o.Id)
-	if err != nil {
-		return
-	}
-
-	if o == nil {
-		err = ItemNotFound
-	}
-	return
+	RequestOrder(ctx context.Context, or RequestOrder) (uuid.UUID, error)
 }

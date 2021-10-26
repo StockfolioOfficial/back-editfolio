@@ -93,6 +93,10 @@ func ExistsAdmin(u *User) bool {
 	return u != nil && !u.IsDeleted() && u.IsAdmin()
 }
 
+func ExistsCustomer(u *User) bool {
+	return u != nil && !u.IsDeleted() && u.IsCustomer()
+}
+
 func (u *User) UpdatePassword(plainPass string) {
 	generated, _ := bcrypt.GenerateFromPassword([]byte(plainPass), bcrypt.DefaultCost+2)
 	u.Password = string(generated)
