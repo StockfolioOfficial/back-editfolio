@@ -48,7 +48,7 @@ func (r *repo) GetById(ctx context.Context, userId uuid.UUID) (user *domain.User
 }
 
 func (r *repo) Save(ctx context.Context, user *domain.User) error {
-	return r.db.WithContext(ctx).Save(user).Error
+	return gormx.Upsert(ctx, r.db, user)
 }
 
 func (r *repo) Get() *gorm.DB {

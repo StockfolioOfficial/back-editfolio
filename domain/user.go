@@ -29,7 +29,7 @@ type User struct {
 	DeletedAt *time.Time `gorm:"size:6;index"`
 	Customer  *Customer  `gorm:"foreignKey:Id"`
 	Manager   *Manager   `gorm:"foreignKey:Id"`
-	MyJob     []Order    `gorm:"foreignKey:orderer"`
+	MyOrder   []Order    `gorm:"foreignKey:orderer"`
 	Ticket    []Order    `gorm:"foreignKey:assignee"`
 }
 
@@ -53,6 +53,18 @@ func CreateUser(option UserCreateOption) User {
 	}
 }
 
+func (u *User) LoadManagerInfo(ctx context.Context, repo ManagerRepository) (err error) {
+	u.Manager, err = repo.GetById(ctx, u.Id)
+	if err != nil {
+		return
+	}
+
+	if u.Manager == nil {
+		err = ItemNotFound
+	}
+	return
+}
+
 func (u *User) ComparePassword(plainPass string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(plainPass)) == nil
 }
@@ -65,18 +77,36 @@ func (u *User) IsAdmin() bool {
 	return u.HasRole(AdminUserRole)
 }
 
+func (u *User) IsSuperAdmin() bool {
+	return u.HasRole(SuperAdminUserRole)
+}
+
 func (u *User) HasRole(role UserRole) bool {
 	return u.Role == role
 }
 
 func (u *User) IsDeleted() bool {
-	return u.DeletedAt == nil
+	return u.DeletedAt != nil
+}
+
+func ExistsAdmin(u *User) bool {
+	return u != nil && !u.IsDeleted() && u.IsAdmin()
 }
 
 func (u *User) UpdatePassword(plainPass string) {
 	generated, _ := bcrypt.GenerateFromPassword([]byte(plainPass), bcrypt.DefaultCost+2)
 	u.Password = string(generated)
 	u.stampUpdate()
+}
+
+func (u *User) UpdateManagerInfo(username, name, nickname string) {
+	defer u.stampUpdate()
+	u.Username = username
+	if u.Manager == nil {
+		return
+	}
+	u.Manager.Name = name
+	u.Manager.Nickname = nickname
 }
 
 func (u *User) stampUpdate() {
@@ -117,6 +147,13 @@ type UpdateAdminPassword struct {
 	UserId      uuid.UUID
 }
 
+type UpdateAdminInfo struct {
+	UserId   uuid.UUID
+	Name     string
+	Username string
+	Nickname string
+}
+
 type CreateAdminUser struct {
 	Name     string
 	Email    string
@@ -127,9 +164,11 @@ type CreateAdminUser struct {
 type UserUseCase interface {
 	CreateCustomerUser(ctx context.Context, cu CreateCustomerUser) (uuid.UUID, error)
 	UpdateAdminPassword(ctx context.Context, up UpdateAdminPassword) error
+	UpdateAdminInfo(ctx context.Context, ui UpdateAdminInfo) error
 	SignInUser(ctx context.Context, si SignInUser) (string, error)
 	DeleteCustomerUser(ctx context.Context, du DeleteCustomerUser) error
 	CreateAdminUser(ctx context.Context, au CreateAdminUser) (uuid.UUID, error)
+	DeleteAdminUser(ctx context.Context, da DeleteAdminUser) error
 }
 
 type TokenGenerateAdapter interface {
@@ -137,5 +176,9 @@ type TokenGenerateAdapter interface {
 }
 
 type DeleteCustomerUser struct {
+	Id uuid.UUID
+}
+
+type DeleteAdminUser struct {
 	Id uuid.UUID
 }
