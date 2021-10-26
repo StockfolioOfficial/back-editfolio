@@ -14,12 +14,14 @@ func NewUserUseCase(
 	userRepo domain.UserRepository,
 	tokenAdapter domain.TokenGenerateAdapter,
 	managerRepo domain.ManagerRepository,
+	customerRepo domain.CustomerRepository,
 	timeout time.Duration,
 ) domain.UserUseCase {
 	return &ucase{
 		userRepo:     userRepo,
 		tokenAdapter: tokenAdapter,
 		managerRepo:  managerRepo,
+		customerRepo: customerRepo,
 		timeout:      timeout,
 	}
 }
@@ -28,6 +30,7 @@ type ucase struct {
 	userRepo     domain.UserRepository
 	tokenAdapter domain.TokenGenerateAdapter
 	managerRepo  domain.ManagerRepository
+	customerRepo domain.CustomerRepository
 	timeout      time.Duration
 }
 
@@ -35,15 +38,90 @@ func (u *ucase) CreateCustomerUser(ctx context.Context, cu domain.CreateCustomer
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
+	exists, err := u.userRepo.GetByUsername(c, cu.Email)
+
+	if exists != nil {
+		err = domain.ItemAlreadyExist
+		return
+	}
+
 	var user = createUser(domain.CustomerUserRole, cu.Email, cu.Mobile)
-	err = u.userRepo.Transaction(c, func(ur domain.UserTxRepository) error {
-		return ur.Save(c, &user)
-		//TODO customer 테이블 만들어서 연결필요
+	var customer = domain.CreateCustomer(domain.CustomerCreateOption{
+		User:   &user,
+		Name:   cu.Name,
+		Email:  cu.Email,
+		Mobile: cu.Mobile,
 	})
-
+	err = u.userRepo.Transaction(c, func(ur domain.UserTxRepository) error {
+		mr := u.customerRepo.With(ur)
+		g, gc := errgroup.WithContext(c)
+		g.Go(func() error {
+			return ur.Save(gc, &user)
+		})
+		g.Go(func() error {
+			return mr.Save(gc, &customer)
+		})
+		return g.Wait()
+	})
 	newId = user.Id
-
 	return
+}
+
+func (u *ucase) UpdateCustomerUser(ctx context.Context, cu domain.UpdateCustomerUser) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	exists, err := u.userRepo.GetByUsername(c, cu.Email)
+	if err != nil {
+		return
+	}
+
+	var user *domain.User
+	if exists != nil {
+		if exists.Id == cu.UserId {
+			user = exists
+		} else {
+			err = domain.ItemAlreadyExist
+			return
+		}
+	}
+
+	if user == nil {
+		user, err = u.userRepo.GetById(c, cu.UserId)
+		if err != nil {
+			return
+		}
+	}
+
+	if !domain.ExistsCustomer(user) {
+		err = domain.ItemNotFound
+		return
+	}
+
+	err = user.LoadCustomerInfo(c, u.customerRepo)
+	if err != nil {
+		return
+	}
+
+	user.UpdateCustomerInfo(
+		cu.Name,
+		cu.ChannelName,
+		cu.ChannelLink,
+		cu.Email,
+		cu.Mobile,
+		cu.PersonaLink,
+		cu.OnedriveLink,
+		cu.Memo,
+	)
+
+	g, gc := errgroup.WithContext(c)
+	g.Go(func() error {
+		return u.userRepo.Save(gc, user)
+	})
+	g.Go(func() error {
+		return u.customerRepo.Save(c, user.Customer)
+	})
+	return g.Wait()
 }
 
 func (u *ucase) UpdateAdminPassword(ctx context.Context, up domain.UpdateAdminPassword) (err error) {
