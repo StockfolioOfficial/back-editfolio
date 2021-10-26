@@ -40,7 +40,7 @@ RUN apk update && apk upgrade && \
 ENV PORT=$port
 ENV BINARY=$binary
 
-COPY --from=builder /core/app/${BINARY} /app
+COPY --from=builder /app/${BINARY} /app
 
 EXPOSE ${PORT}
 
