@@ -41,6 +41,7 @@ ENV PORT=$port
 ENV BINARY=$binary
 
 COPY --from=builder /app/${BINARY} /app
+COPY config.json /app
 
 EXPOSE ${PORT}
 
