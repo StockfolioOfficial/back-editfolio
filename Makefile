@@ -2,6 +2,8 @@ ifndef BINARY
 	BINARY=debug
 endif
 
+GENERATE_PATH := $(shell go env GOPATH)/bin
+
 init:
 	go mod download all
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
@@ -9,11 +11,13 @@ init:
 	go install github.com/swaggo/swag/cmd/swag
 	go install github.com/google/wire/cmd/wire
 
+generate: swagger wire
+
 swagger:
-	swag init
+	${GENERATE_PATH}/swag init
 
 wire:
-	wire .
+	${GENERATE_PATH}/wire .
 
 proto-compile:
 	protoc --go_out=. --go-grpc_out=. proto/*.proto

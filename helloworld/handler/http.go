@@ -1,15 +1,16 @@
 package handler
 
 import (
-	"github.com/labstack/echo/v4"
 	"net/http"
+
+	"github.com/labstack/echo/v4"
 )
 
 func NewHelloWorldHttpHandler() *HttpHandler {
 	return &HttpHandler{}
 }
 
-type HttpHandler struct { }
+type HttpHandler struct{}
 
 func (h *HttpHandler) HelloWorld(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, echo.Map{

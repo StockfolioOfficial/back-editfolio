@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	IsDebug = true
-	DBConn = ""
+	IsDebug   = true
+	DBConn    = ""
+	JWTSecret = ""
 )
 
 const (
@@ -40,5 +41,7 @@ func init() {
 		IsDebug = c.IsDebug
 		DBConn = fmt.Sprintf(mysqlDBConnFormat,
 			db.User, db.Pass, db.Host, db.Port, db.Name, val.Encode())
+
+		JWTSecret = c.JWT.Secret
 	}
 }
