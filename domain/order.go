@@ -50,3 +50,23 @@ type VideoEditRequirement struct {
 	Id          uuid.UUID
 	Requirement string
 }
+
+type OrderUseCase interface {
+	VideoEditRequirement(ctx context.Context, vr VideoEditRequirement) error
+}
+
+func (o *Order) LoadOrderInfo(ctx context.Context, repo OrderRepository) (err error) {
+	o, err = repo.GetById(ctx, o.Id)
+	if err != nil {
+		return
+	}
+
+	if o == nil {
+		err = ItemNotFound
+	}
+	return
+}
+
+func (o *Order) UpdateVideoEditRequirement(requirement string) {
+	o.Requirement = requirement
+}

@@ -22,5 +22,11 @@ func (o *ocase) VideoEditRequirement(ctx context.Context, vr domain.VideoEditReq
 		return
 	}
 
+	err = order.LoadOrderInfo(c, o.orderRepo)
+	if err != nil {
+		return
+	}
+
+	order.UpdateVideoEditRequirement(vr.Requirement)
 	return o.orderRepo.Save(c, order)
 }
