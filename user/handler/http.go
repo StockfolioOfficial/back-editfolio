@@ -27,29 +27,11 @@ type CreateCustomerRequest struct {
 	// Name, 길이 2~60 제한
 	Name string `json:"name" validate:"required,min=2,max=60" example:"ljs"`
 
-	// ChannelName, 길이 2~100 제한
-	ChannelName string `json:"channelName" example:"밥굽남"`
-
-	// ChannelLink, 길이 2048 제한
-	ChannelLink string `json:"channelLink" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
-
 	// Email, 이메일 주소
 	Email string `json:"email" validate:"required,email" example:"example@example.com"`
 
 	// Mobile, 형식 : 01012345678
 	Mobile string `json:"mobile" validate:"required,sf_mobile" example:"01012345678"`
-
-	//OrderableCount, 주문 가능 횟수
-	//OrderableCount int `json:"orderableCount" default: "4" example: "4"`
-
-	//PersonaLink, 길이 2048 제한
-	PersonaLink string `json:"personaLink" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
-
-	//OnedriveLink, 길이 2048 제한
-	OnedriveLink string `json:"onedriveLink" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
-
-	//Memo, 형식 : text
-	//Memo string `json:"Memo" example:"편집 잘 부탁 드립니다. 따로 요청 사항은 없어요~"`
 } // @name CreateCustomerUserRequest
 
 type CreatedCustomerResp struct {
@@ -63,6 +45,7 @@ type UpdatePasswordRequest struct {
 	NewPassword string `json:"newPassword" validate:"required" example:"01087654321"`
 } // @name UpdatePasswordRequest
 
+// @Security Auth-Jwt-Bearer
 // @Summary 고객 유저 생성
 // @Description 고객 유저를 생성하는 기능
 // @Accept json
@@ -81,16 +64,10 @@ func (h *HttpHandler) createCustomer(ctx echo.Context) error {
 		})
 	}
 
-	newId, err := h.useCase.CreateCustomerUser(ctx.Request().Context(), domain.CreateCustomerInformation{
-		Name:        req.Name,
-		ChannelName: req.ChannelName,
-		ChannelLink: req.ChannelLink,
-		Email:       req.Email,
-		Mobile:      req.Mobile,
-		//OrderableCount: req.OrderableCount,
-		PersonaLink:  req.PersonaLink,
-		OnedriveLink: req.OnedriveLink,
-		//Memo:           req.Memo,
+	newId, err := h.useCase.CreateCustomerUser(ctx.Request().Context(), domain.CreateCustomerUser{
+		Name:   req.Name,
+		Email:  req.Email,
+		Mobile: req.Mobile,
 	})
 
 	switch err {
@@ -98,6 +75,83 @@ func (h *HttpHandler) createCustomer(ctx echo.Context) error {
 		return ctx.JSON(http.StatusCreated, CreatedCustomerResp{Id: newId})
 	default:
 		log.WithError(err).Error(tag, "create customer, unhandled error useCase.CreateCustomerUser")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+}
+
+type UpdateCustomerRequest struct {
+	// UserId,
+	UserId uuid.UUID `json:"userId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+
+	// Name, 길이 2~60 제한
+	Name string `json:"name" validate:"required,min=2,max=60" example:"ljs"`
+
+	// ChannelName, 길이 2~100 제한
+	ChannelName string `json:"channelName" example:"밥굽남"`
+
+	// ChannelLink, 길이 2048 제한
+	ChannelLink string `json:"channelLink" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
+
+	// Email, 이메일 주소
+	Email string `json:"email" validate:"required,email" example:"example@example.com"`
+
+	// Mobile, 형식 : 01012345678
+	Mobile string `json:"mobile" validate:"required,sf_mobile" example:"01012345678"`
+
+	//PersonaLink, 길이 2048 제한
+	PersonaLink string `json:"personaLink" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
+
+	//OnedriveLink, 길이 2048 제한
+	OnedriveLink string `json:"onedriveLink" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
+
+	//Memo, 형식 : text
+	Memo string `json:"Memo" example:"편집 잘 부탁 드립니다. 따로 요청 사항은 없어요~"`
+} //@name UpdadteCustomerUserRequest
+
+type UpdateCustomerResp struct {
+	Message string `json:"emial" example:"wecode@naver.com"`
+} // @name UpdateCustomerResponse
+
+// @Security Auth-Jwt-Bearer
+// @Summary 고객 유저 정보 입력
+// @Description 고객 유저 정보 입력하는 기능
+// @Accept json
+// @Produce json
+// @Param customerUserBody body UpdateCustomerRequest true "Customer User Body"
+// @Success 201 {object} CreatedCustomerResp
+// @Router /user/customer [patch]
+func (h *HttpHandler) updateCustomer(ctx echo.Context) error {
+	var req UpdateCustomerRequest
+
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "update customer, request body bind error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	err = h.useCase.UpdateCustomerUser(ctx.Request().Context(), domain.UpdateCustomerUser{
+		UserId:       req.UserId,
+		Name:         req.Name,
+		ChannelName:  req.ChannelName,
+		ChannelLink:  req.ChannelLink,
+		Email:        req.Email,
+		Mobile:       req.Mobile,
+		PersonaLink:  req.PersonaLink,
+		OnedriveLink: req.OnedriveLink,
+		Memo:         req.Memo,
+	})
+
+	switch err {
+	case nil:
+		return ctx.JSON(http.StatusOK, UpdateCustomerResp{Message: "SUCCESS"})
+	case domain.ItemNotFound:
+		return ctx.JSON(http.StatusNotFound, domain.ItemNotFound)
+	case domain.ItemAlreadyExist:
+		return ctx.JSON(http.StatusConflict, domain.ItemAlreadyExist)
+	default:
+		log.WithError(err).Error(tag, "update customer, unhandled error useCase.UpdateCustomerUser")
 		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
 	}
 }
@@ -232,7 +286,9 @@ func (h *HttpHandler) createAdmin(ctx echo.Context) error {
 
 func (h *HttpHandler) Bind(e *echo.Echo) {
 	//CRUD, customer or admin
-	e.POST("/user/customer", h.createCustomer)
+	e.POST("/user/customer", h.createCustomer, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
+	e.PATCH("/user/customer", h.updateCustomer, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
+
 	//sign, auth
 	e.POST("/user/sign", h.signInUser)
 

@@ -7,6 +7,7 @@ import (
 	"github.com/stockfolioofficial/back-editfolio/domain"
 	"github.com/stockfolioofficial/back-editfolio/util/gormx"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func NewCustomerRepository(db *gorm.DB) domain.CustomerRepository {
@@ -50,7 +51,12 @@ func (r *repo) Get() *gorm.DB {
 }
 
 func (r *repo) Save(ctx context.Context, customer *domain.Customer) error {
-	return r.db.WithContext(ctx).Save(customer).Error
+	//TODO
+	//refactor
+	//gormx.Upsert(ctx, r.db, customer)
+	return r.db.WithContext(ctx).
+		Clauses(clause.OnConflict{UpdateAll: true}).
+		Create(customer).Error
 }
 
 func (r *repo) With(tx gormx.Tx) domain.CustomerTxRepository {

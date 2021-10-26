@@ -34,46 +34,24 @@ type ucase struct {
 	timeout      time.Duration
 }
 
-// func (u *ucase) CreateCustomerUser(ctx context.Context, cu domain.CreateCustomerUser) (newId uuid.UUID, err error) {
-// 	c, cancel := context.WithTimeout(ctx, u.timeout)
-// 	defer cancel()
-
-// 	var user = createUser(domain.CustomerUserRole, cu.Email, cu.Mobile)
-// 	err = u.userRepo.Transaction(c, func(ur domain.UserTxRepository) error {
-// 		return ur.Save(c, &user)
-// 		//TODO customer 테이블 만들어서 연결필요
-// 	})
-
-// 	newId = user.Id
-
-// 	return
-// }
-
-func (u *ucase) CreateCustomerUser(ctx context.Context, ci domain.CreateCustomerInformation) (newId uuid.UUID, err error) {
+func (u *ucase) CreateCustomerUser(ctx context.Context, cu domain.CreateCustomerUser) (newId uuid.UUID, err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
-	email, err := u.userRepo.GetByUsername(c, ci.Email)
+	email, err := u.userRepo.GetByUsername(c, cu.Email)
 
 	if email != nil {
 		err = domain.ItemAlreadyExist
 		return
 	}
 
-	var user = createUser(domain.CustomerUserRole, ci.Email, ci.Mobile)
+	var user = createUser(domain.CustomerUserRole, cu.Email, cu.Mobile)
 	var customer = domain.CreateCustomer(domain.CustomerCreateOption{
-		User:           &user,
-		Name:           ci.Name,
-		ChannelName:    ci.ChannelName,
-		ChannelLink:    ci.ChannelLink,
-		Email:          ci.Email,
-		Mobile:         ci.Mobile,
-		OrderableCount: ci.OrderableCount,
-		PersonaLink:    ci.PersonaLink,
-		OnedriveLink:   ci.OnedriveLink,
-		Memo:           ci.Memo,
+		User:   &user,
+		Name:   cu.Name,
+		Email:  cu.Email,
+		Mobile: cu.Mobile,
 	})
-
 	err = u.userRepo.Transaction(c, func(ur domain.UserTxRepository) error {
 		mr := u.customerRepo.With(ur)
 		g, gc := errgroup.WithContext(c)
@@ -87,6 +65,63 @@ func (u *ucase) CreateCustomerUser(ctx context.Context, ci domain.CreateCustomer
 	})
 	newId = user.Id
 	return
+}
+
+func (u *ucase) UpdateCustomerUser(ctx context.Context, cu domain.UpdateCustomerUser) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	exists, err := u.userRepo.GetByUsername(c, cu.Email)
+	if err != nil {
+		return
+	}
+
+	var user *domain.User
+	if exists != nil {
+		if exists.Id == cu.UserId {
+			user = exists
+		} else {
+			err = domain.ItemAlreadyExist
+			return
+		}
+	}
+
+	if user == nil {
+		user, err = u.userRepo.GetById(c, cu.UserId)
+		if err != nil {
+			return
+		}
+	}
+
+	if !domain.ExistsCustomer(user) {
+		err = domain.ItemNotFound
+		return
+	}
+
+	err = user.LoadCustomerInfo(c, u.customerRepo)
+	if err != nil {
+		return
+	}
+
+	user.UpdateCustomerInfo(
+		cu.Name,
+		cu.ChannelName,
+		cu.ChannelLink,
+		cu.Email,
+		cu.Mobile,
+		cu.PersonaLink,
+		cu.OnedriveLink,
+		cu.Memo,
+	)
+
+	g, gc := errgroup.WithContext(c)
+	g.Go(func() error {
+		return u.userRepo.Save(gc, user)
+	})
+	g.Go(func() error {
+		return u.customerRepo.Save(c, user.Customer)
+	})
+	return g.Wait()
 }
 
 func (u *ucase) UpdateAdminPassword(ctx context.Context, up domain.UpdateAdminPassword) (err error) {
