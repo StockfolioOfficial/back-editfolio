@@ -49,7 +49,7 @@ func (r *repo) Get() *gorm.DB {
 }
 
 func (r *repo) Save(ctx context.Context, manager *domain.Manager) error {
-	return r.db.WithContext(ctx).Save(manager).Error
+	return gormx.Upsert(ctx, r.db, manager)
 }
 
 func (r *repo) With(tx gormx.Tx) domain.ManagerTxRepository {

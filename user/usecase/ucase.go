@@ -129,7 +129,7 @@ func (u *ucase) UpdateAdminPassword(ctx context.Context, up domain.UpdateAdminPa
 	defer cancel()
 
 	user, err := u.userRepo.GetById(c, up.UserId)
-	if user == nil || user.IsDeleted() || !user.IsAdmin() {
+	if !domain.ExistsAdmin(user) {
 		err = domain.ItemNotFound
 		return
 	}
@@ -141,6 +141,54 @@ func (u *ucase) UpdateAdminPassword(ctx context.Context, up domain.UpdateAdminPa
 
 	user.UpdatePassword(up.NewPassword)
 	return u.userRepo.Save(c, user)
+}
+
+func (u *ucase) UpdateAdminInfo(ctx context.Context, ui domain.UpdateAdminInfo) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	exists, err := u.userRepo.GetByUsername(c, ui.Username)
+	if err != nil {
+		return
+	}
+
+	var user *domain.User
+	if exists != nil {
+		if exists.Id == ui.UserId {
+			user = exists
+		} else {
+			err = domain.ItemAlreadyExist
+			return
+		}
+	}
+
+	if user == nil {
+		user, err = u.userRepo.GetById(c, ui.UserId)
+		if err != nil {
+			return
+		}
+	}
+
+	if !domain.ExistsAdmin(user) {
+		err = domain.ItemNotFound
+		return
+	}
+
+	err = user.LoadManagerInfo(c, u.managerRepo)
+	if err != nil {
+		return
+	}
+
+	user.UpdateManagerInfo(ui.Username, ui.Name, ui.Nickname)
+
+	g, gc := errgroup.WithContext(c)
+	g.Go(func() error {
+		return u.userRepo.Save(gc, user)
+	})
+	g.Go(func() error {
+		return u.managerRepo.Save(c, user.Manager)
+	})
+	return g.Wait()
 }
 
 func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (token string, err error) {
@@ -245,4 +293,19 @@ func createUser(role domain.UserRole, username, password string) (user domain.Us
 
 	user.UpdatePassword(password)
 	return
+}
+
+func (u *ucase) DeleteAdminUser(ctx context.Context, da domain.DeleteAdminUser) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	user, err := u.userRepo.GetById(c, da.Id)
+
+	if user == nil || user.IsDeleted() || !user.IsAdmin() {
+		err = domain.ItemNotFound
+		return
+	}
+
+	user.Delete()
+	return u.userRepo.Save(ctx, user)
 }

@@ -51,13 +51,13 @@ func handleJwtBypass(handlerFunc echo.HandlerFunc, role *string) echo.HandlerFun
 			return ctx.JSON(http.StatusUnauthorized, domain.InvalidateTokenResponse)
 		}
 
-		decoded_jwt, err := base64.RawURLEncoding.DecodeString(parts[1])
+		decodedPart, err := base64.RawURLEncoding.DecodeString(parts[1])
 		if err != nil {
 			log.WithError(err).Error("bypass, jwt payload base64 decode failed")
 			return ctx.JSON(http.StatusUnauthorized, domain.InvalidateTokenResponse)
 		}
+    
 		err = json.Unmarshal(decoded_jwt, &jwtDummy)
-
 		if err != nil {
 			log.WithError(err).Error("bypass, jwt payload unmarshal failed")
 			return ctx.JSON(http.StatusUnauthorized, domain.InvalidateTokenResponse)

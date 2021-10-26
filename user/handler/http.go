@@ -281,6 +281,92 @@ func (h *HttpHandler) createAdmin(ctx echo.Context) error {
 	}
 }
 
+type DeleteAdminRequest struct {
+	// Id, 어드민 Id
+	Id uuid.UUID `param:"adminId" json:"-" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+}
+
+// @Security Auth-Jwt-Bearer
+// @Summary 어드민 유저 삭제
+// @Description 어드민 유저를 삭제하는 기능
+// @Accept json
+// @Produce json
+// @Param user_id path string true "Admin User Id"
+// @Success 204
+// @Router /user/admin/{user_id} [delete]
+func (h *HttpHandler) deleteAdminUser(ctx echo.Context) error {
+	var req DeleteAdminRequest
+
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "delete admin, request body error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+	err = h.useCase.DeleteAdminUser(ctx.Request().Context(), domain.DeleteAdminUser{
+		Id: req.Id,
+	})
+
+	switch err {
+	case nil:
+		return ctx.JSON(http.StatusNoContent, domain.ErrorResponse{Message: err.Error()})
+	case domain.ItemNotFound:
+		return ctx.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
+	default:
+		log.WithError(err).Error(tag, "delete customer failed")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+}
+
+
+type UdpateAdminInfomationRequest struct {
+	UserId   string `json:"-" header:"User-Id" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Email    string `json:"email" validate:"required,email" example:"example@example.com"`
+	Name     string `json:"name" validate:"required,min=2,max=60" example:"sch"`
+	Nickname string `json:"nickname" validate:"required,min=2,max=60" example:"nickname"`
+} // @name UpdateAdminInfomationRequest
+
+// @Security Auth-Jwt-Bearer
+// @Summary 어드민 정보 수정
+// @Description 어드민 유저의 정보를 수정하는 API
+// @Accept json
+// @Produce json
+// @Param updateAdmin body UdpateAdminInfomationRequest true "Update Admin Info"
+// @Success 204 "정보 수정 성공"
+// @Router /user/admin [put]
+func (h *HttpHandler) updateAdmin(ctx echo.Context) error {
+	var req UdpateAdminInfomationRequest
+	req.UserId = ctx.Request().Header.Get("User-Id")
+
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "update admin, request body bind error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	err = h.useCase.UpdateAdminInfo(ctx.Request().Context(), domain.UpdateAdminInfo{
+		UserId:   uuid.MustParse(req.UserId),
+		Name:     req.Name,
+		Username: req.Email,
+		Nickname: req.Nickname,
+	})
+
+	switch err {
+	case nil:
+		return ctx.NoContent(http.StatusNoContent)
+	case domain.ItemNotFound:
+		return ctx.JSON(http.StatusUnauthorized, domain.ErrorResponse{Message: err.Error()})
+	case domain.ItemAlreadyExist:
+		return ctx.JSON(http.StatusConflict, domain.ItemExist)
+	default:
+		log.WithError(err).Error(tag, "create admin, unhandled error useCase.CreateAdminUser")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+}
+
 func (h *HttpHandler) Bind(e *echo.Echo) {
 	//CRUD, customer or admin
 	e.POST("/user/customer", h.createCustomer, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
@@ -294,6 +380,12 @@ func (h *HttpHandler) Bind(e *echo.Echo) {
 	//Update Admin Password
 	e.PATCH("/user/admin/pw", h.updateAdminPassword, debug.JwtBypassOnDebug())
 
+	//Update Admin Infomation
+	e.PUT("/user/admin", h.updateAdmin, debug.JwtBypassOnDebug())
+
 	//create admin
 	e.POST("/user/admin", h.createAdmin, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
+
+	//Delete admin
+	e.DELETE("/user/admin/:adminId", h.deleteAdminUser, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
 }
