@@ -8,9 +8,9 @@ FROM golang:1.17.1-alpine3.13 as builder
 ARG binary
 
 LABEL PO=HellP
-LABEL PM=HellP
-LABEL Maintainers=HellP
-LABEL Maintainers_Mail=jlee@stockfolio.ai
+LABEL PM=Oraange
+LABEL Maintainers=HellP,Oraange,hollibleling,jinatra
+LABEL Maintainers_Mail=jlee@stockfolio.ai,hrpp1353@gmail.com,jinatra0816@gmail.com,hollibleling12@gmail.com
 
 WORKDIR /app
 
@@ -21,7 +21,8 @@ COPY . .
 
 ENV BINARY=$binary
 
-RUN make get-dependencies
+RUN make init
+RUN make generate
 # RUN make -C app/ unittest
 RUN make build
 
