@@ -113,6 +113,59 @@ func (u *ucase) UpdateAdminInfo(ctx context.Context, ui domain.UpdateAdminInfo) 
 	return g.Wait()
 }
 
+func (u *ucase) ForceUpdateAdminInfoBySuperAdmin(ctx context.Context, fu domain.ForceUpdateAdminInfo) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	admin, err := u.userRepo.GetByUsername(c, fu.Username)
+
+	if err != nil {
+		return
+	}
+
+	var user *domain.User
+
+	if admin != nil {
+		if admin.Id == fu.UserId {
+			user = admin
+		} else {
+			err = domain.ItemAlreadyExist
+			return
+		}
+	}
+
+	if user == nil {
+		user, err = u.userRepo.GetById(c, fu.UserId)
+		if err != nil {
+			return
+		}
+	}
+
+	if !domain.ExistsAdmin(user) {
+		err = domain.ItemNotFound
+		return
+	}
+
+	user.UpdatePassword(fu.Password)
+
+	err = user.LoadManagerInfo(c, u.managerRepo)
+	if err != nil {
+		return
+	}
+
+	user.UpdateManagerInfo(fu.Username, fu.Name, fu.Nickname)
+
+	g, gc := errgroup.WithContext(c)
+	g.Go(func() error {
+		return u.userRepo.Save(gc, user)
+	})
+	g.Go(func() error {
+		return u.managerRepo.Save(c, user.Manager)
+	})
+	return g.Wait()
+
+}
+
 func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (token string, err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()

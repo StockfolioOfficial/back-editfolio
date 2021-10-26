@@ -154,6 +154,14 @@ type UpdateAdminInfo struct {
 	Nickname string
 }
 
+type ForceUpdateAdminInfo struct {
+	UserId   uuid.UUID
+	Name     string
+	Password string
+	Username string
+	Nickname string
+}
+
 type CreateAdminUser struct {
 	Name     string
 	Email    string
@@ -165,6 +173,7 @@ type UserUseCase interface {
 	CreateCustomerUser(ctx context.Context, cu CreateCustomerUser) (uuid.UUID, error)
 	UpdateAdminPassword(ctx context.Context, up UpdateAdminPassword) error
 	UpdateAdminInfo(ctx context.Context, ui UpdateAdminInfo) error
+	ForceUpdateAdminInfoBySuperAdmin(ctx context.Context, fu ForceUpdateAdminInfo) error
 	SignInUser(ctx context.Context, si SignInUser) (string, error)
 	DeleteCustomerUser(ctx context.Context, du DeleteCustomerUser) error
 	CreateAdminUser(ctx context.Context, au CreateAdminUser) (uuid.UUID, error)

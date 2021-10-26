@@ -41,8 +41,8 @@ type CreatedCustomerResp struct {
 type UpdatePasswordRequest struct {
 	UserId string `json:"-" header:"User-Id" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 	// Mobile, 형식 : 01012345678
-	OldPassword string `json:"oldPassword" validate:"required" example:"01012345678"`
-	NewPassword string `json:"newPassword" validate:"required" example:"01087654321"`
+	OldPassword string `json:"oldPassword" validate:"required,sf_password" example:"abcd1234!@"`
+	NewPassword string `json:"newPassword" validate:"required,sf_password" example:"pass1234!@"`
 } // @name UpdatePasswordRequest
 
 type UdpateAdminInfomationRequest struct {
@@ -51,6 +51,14 @@ type UdpateAdminInfomationRequest struct {
 	Name     string `json:"name" validate:"required,min=2,max=60" example:"sch"`
 	Nickname string `json:"nickname" validate:"required,min=2,max=60" example:"nickname"`
 } // @name UpdateAdminInfomationRequest
+
+type ForceUpdateAdminInfomationRequest struct {
+	UserId   string `param:"userId" json:"-" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Password string `json:"password" validate:"required,sf_password" example:"pass1234!@"`
+	Email    string `json:"email" validate:"required,email" example:"example@example.com"`
+	Name     string `json:"name" validate:"required,min=2,max=60" example:"sch"`
+	Nickname string `json:"nickname" validate:"required,min=2,max=60" example:"nickname"`
+} // @name ForceUpdateAdminInfomationRequest
 
 // @Summary 고객 유저 생성
 // @Description 고객 유저를 생성하는 기능
@@ -271,8 +279,17 @@ func (h *HttpHandler) updateAdmin(ctx echo.Context) error {
 		})
 	}
 
+	userUUID, err := uuid.Parse(req.UserId)
+
+	if err != nil {
+		log.WithError(err).Trace(tag, "UUID error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
 	err = h.useCase.UpdateAdminInfo(ctx.Request().Context(), domain.UpdateAdminInfo{
-		UserId:   uuid.MustParse(req.UserId),
+		UserId:   userUUID,
 		Name:     req.Name,
 		Username: req.Email,
 		Nickname: req.Nickname,
@@ -286,7 +303,58 @@ func (h *HttpHandler) updateAdmin(ctx echo.Context) error {
 	case domain.ItemAlreadyExist:
 		return ctx.JSON(http.StatusConflict, domain.ItemExist)
 	default:
-		log.WithError(err).Error(tag, "create admin, unhandled error useCase.CreateAdminUser")
+		log.WithError(err).Error(tag, "create admin, unhandled error useCase.UpdateAdminInfo")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+}
+
+// @Security Auth-Jwt-Bearer
+// @Summary 어드민 정보 강제 수정
+// @Description 슈퍼 어드민이 어드민 유저의 정보를 강제로 수정하는 API
+// @Accept json
+// @Produce json
+// @Param updateAdminBySuperAdmin body ForceUpdateAdminInfomationRequest true "Force-Update Admin Info"
+// @Param user_id path string true "Admin User Id"
+// @Success 204 "정보 수정 성공"
+// @Router /user/super-admin/{user_id} [put]
+func (h *HttpHandler) updateAdminBySuperAdmin(ctx echo.Context) error {
+	var req ForceUpdateAdminInfomationRequest
+	req.UserId = ctx.Request().Header.Get("User-Id")
+
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "force update admin, request body bind error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	userUUID, err := uuid.Parse(req.UserId)
+
+	if err != nil {
+		log.WithError(err).Trace(tag, "UUID error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	err = h.useCase.ForceUpdateAdminInfoBySuperAdmin(ctx.Request().Context(), domain.ForceUpdateAdminInfo{
+		UserId:   userUUID,
+		Password: req.Password,
+		Name:     req.Name,
+		Username: req.Email,
+		Nickname: req.Nickname,
+	})
+
+	switch err {
+	case nil:
+		return ctx.NoContent(http.StatusNoContent)
+	case domain.ItemNotFound:
+		return ctx.JSON(http.StatusUnauthorized, domain.ErrorResponse{Message: err.Error()})
+	case domain.ItemAlreadyExist:
+		return ctx.JSON(http.StatusConflict, domain.ItemExist)
+	default:
+		log.WithError(err).Error(tag, "force-update admin, unhandled error useCase.ForceUpdateAdminInfoBySuperAdmin")
 		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
 	}
 }
@@ -294,6 +362,7 @@ func (h *HttpHandler) updateAdmin(ctx echo.Context) error {
 func (h *HttpHandler) Bind(e *echo.Echo) {
 	//CRUD, customer or admin
 	e.POST("/user/customer", h.createCustomer)
+
 	//sign, auth
 	e.POST("/user/sign", h.signInUser)
 
@@ -305,6 +374,9 @@ func (h *HttpHandler) Bind(e *echo.Echo) {
 
 	//Update Admin Infomation
 	e.PUT("/user/admin", h.updateAdmin, debug.JwtBypassOnDebug())
+
+	//Update Admin Infomation By SuperAdmin
+	e.PUT("/user/super-admin/:userId", h.updateAdminBySuperAdmin, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
 
 	//create admin
 	e.POST("/user/admin", h.createAdmin, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
