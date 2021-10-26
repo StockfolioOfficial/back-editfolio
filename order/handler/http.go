@@ -21,34 +21,34 @@ type HttpHandler struct {
 	useCase domain.OrderUseCase
 }
 
-type VideoEditRequirementRequest struct {
+type CreateOrderRequest struct {
 	// Id, 오더 Id
 	Id uuid.UUID `param:"userId" json:"-" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 
 	// Requirement, 요청사항
 	Requirement string `json:"requirement" validate:"required,max=2000" example:"알잘딱깔센"`
-} // @name VideoEditRequirementRequest
+} // @name CreateOrderRequest
 
 // @Summary 편집 요청 사항 입력
 // @Description 고객이 영상 편집 요청을 입력하는 기능
 // @Accept json
 // @Produce json
-// @Param videoEditRequirementBody body VideoEditRequirementRequest true "Video Edit Requirement Body"
+// @Param createOrderBody body CreateOrderRequest true "Create Order Requirement Body"
 // @Success 201
 // @Router /order [post]
-func (h *HttpHandler) VideoEditRequirement(ctx echo.Context) error {
-	var req VideoEditRequirementRequest
+func (h *HttpHandler) CreateOrder(ctx echo.Context) error {
+	var req CreateOrderRequest
 
 	err := ctx.Bind(&req)
 	if err != nil {
-		log.WithError(err).Trace(tag, "video edit request, request body bind error")
+		log.WithError(err).Trace(tag, "create order request, request body bind error")
 		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
 			Message: err.Error(),
 		})
 	}
 
-	err = h.useCase.VideoEditRequirement(ctx.Request().Context(), domain.VideoEditRequirement{
-		Id:          req.Id,
+	err = h.useCase.VideoEditRequirement(ctx.Request().Context(), domain.OrderRequirement{
+		OrderId:     req.Id,
 		Requirement: req.Requirement,
 	})
 
@@ -65,5 +65,5 @@ func (h *HttpHandler) VideoEditRequirement(ctx echo.Context) error {
 
 func (h *HttpHandler) Bind(e *echo.Echo) {
 	//Video Edit Requirement
-	e.POST("/order", h.VideoEditRequirement)
+	e.POST("/order", h.CreateOrder)
 }

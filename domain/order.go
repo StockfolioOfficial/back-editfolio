@@ -46,13 +46,14 @@ type OrderTxRepository interface {
 	gormx.Tx
 }
 
-type VideoEditRequirement struct {
-	Id          uuid.UUID
+type OrderRequirement struct {
+	OrderId     uuid.UUID
+	UserId      uuid.UUID
 	Requirement string
 }
 
 type OrderUseCase interface {
-	VideoEditRequirement(ctx context.Context, vr VideoEditRequirement) error
+	VideoEditRequirement(ctx context.Context, or OrderRequirement) error
 }
 
 func (o *Order) LoadOrderInfo(ctx context.Context, repo OrderRepository) (err error) {
