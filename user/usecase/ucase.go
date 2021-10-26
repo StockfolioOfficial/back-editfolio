@@ -102,11 +102,15 @@ func (u *ucase) UpdateAdminInfo(ctx context.Context, ui domain.UpdateAdminInfo) 
 	}
 
 	user.UpdateManagerInfo(ui.Username, ui.Name, ui.Nickname)
-	err = u.userRepo.Save(c, user)
-	if err != nil {
-		return
-	}
-	return u.managerRepo.Save(c, user.Manager)
+
+	g, gc := errgroup.WithContext(c)
+	g.Go(func() error {
+		return u.userRepo.Save(gc, user)
+	})
+	g.Go(func() error {
+		return u.managerRepo.Save(c, user.Manager)
+	})
+	return g.Wait()
 }
 
 func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (token string, err error) {
