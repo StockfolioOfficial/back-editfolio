@@ -22,6 +22,10 @@ type Order struct {
 	DoneAt      *time.Time `gorm:"size:6;index"`
 }
 
+func (Order) TableName() string{
+	return "order"
+}
+
 type CreateOrderOption struct {
 	Orderer     User
 	Requirement *string
