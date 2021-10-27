@@ -22,11 +22,6 @@ type Order struct {
 	DoneAt      *time.Time `gorm:"size:6;index"`
 }
 
-type OrderState struct {
-	Id      uint8   `gorm:"primaryKey"` // AutoIncreament 설정 ?
-	Content []Order `gorm:"foreignKey:State"`
-}
-
 type CreateOrderOption struct {
 	Orderer     User
 	Requirement *string
