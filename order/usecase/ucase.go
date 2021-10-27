@@ -47,7 +47,7 @@ func (u *ucase) RequestOrder(ctx context.Context, or domain.RequestOrder) (newId
 		return
 	}
 
-	if domain.ExistsCustomer(user) {
+	if !domain.ExistsCustomer(user) {
 		err = domain.ErrNoPermission
 		return
 	}

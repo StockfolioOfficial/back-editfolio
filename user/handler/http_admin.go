@@ -1,12 +1,10 @@
 package handler
 
 import (
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/stockfolioofficial/back-editfolio/domain"
-	"math/rand"
 	"net/http"
 	"time"
 )
@@ -298,25 +296,40 @@ func (c *UserController) fetchCustomer(ctx echo.Context) error {
 	var req FetchCustomerRequest
 	err := ctx.Bind(&req)
 	if err != nil {
-		log.WithError(err).Trace(tag, "fetch customer, request data bind error")
+		log.WithError(err).Trace(tag, "fetch full customer, request data bind error")
 		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
 			Message: err.Error(),
 		})
 	}
 
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	res := make(CustomerInfoListResponse, 10)
-	for i := range res {
+	list, err := c.useCase.FetchAllCustomer(ctx.Request().Context(), domain.FetchCustomerOption{
+		Query: req.Query,
+	})
+
+	if err != nil {
+		log.WithError(err).Error(tag, "fetch full customer, unhandled error useCase.FetchAllCustomer")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+
+	if len(list) == 0 {
+		return ctx.NoContent(http.StatusNoContent)
+	}
+
+	res := make(CustomerInfoListResponse, len(list))
+
+	for i := range list {
+		src := list[i]
 		res[i] = CustomerInfoResponse{
-			UserId:      uuid.New(),
-			Name:        fmt.Sprintf("클린한-고객명-%02d", i),
-			ChannelName: fmt.Sprintf("클린한-채널명-%02d", i),
-			ChannelLink: fmt.Sprintf("클린한-채널링크-%02d", i),
-			Email:       fmt.Sprintf("example%02d@example.com", i),
-			Mobile:      fmt.Sprintf("010%08d\n", r.Int31n(100000000)),
-			CreatedAt:   time.Now().Add(-time.Second * time.Duration(r.Int63n(1000000))),
+			UserId:      src.UserId,
+			Name:        src.Name,
+			ChannelName: src.ChannelName,
+			ChannelLink: src.ChannelLink,
+			Email:       src.Email,
+			Mobile:      src.Mobile,
+			CreatedAt:   src.CreatedAt,
 		}
 	}
+
 	return ctx.JSON(http.StatusOK, res)
 }
 
@@ -344,25 +357,40 @@ type AdminInfoListResponse []AdminInfoResponse
 // @Success 200 {object} AdminInfoListResponse "성공"
 // @Router /admin [get]
 func (c *UserController) fetchAdmin(ctx echo.Context) error {
-	var req FetchCustomerRequest
+	var req FetchAdminRequest
 	err := ctx.Bind(&req)
 	if err != nil {
-		log.WithError(err).Trace(tag, "fetch customer, request data bind error")
+		log.WithError(err).Trace(tag, "fetch full admin, request data bind error")
 		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
 			Message: err.Error(),
 		})
 	}
 
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	res := make(AdminInfoListResponse, 10)
-	for i := range res {
+	list, err := c.useCase.FetchAllAdmin(ctx.Request().Context(), domain.FetchAdminOption{
+		Query: req.Query,
+	})
+
+	if err != nil {
+		log.WithError(err).Error(tag, "fetch full customer, unhandled error useCase.FetchAllCustomer")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+
+	if len(list) == 0 {
+		return ctx.NoContent(http.StatusNoContent)
+	}
+
+	res := make(AdminInfoListResponse, len(list))
+
+	for i := range list {
+		src := list[i]
 		res[i] = AdminInfoResponse{
-			UserId:    uuid.New(),
-			Name:      fmt.Sprintf("클린한-관리자-이름-%02d", i),
-			Nickname:  fmt.Sprintf("클린한-관리자-닉네임-%02d", i),
-			Email:     fmt.Sprintf("example%02d@example.com", i),
-			CreatedAt: time.Now().Add(-time.Second * time.Duration(r.Int63n(1000000))),
+			UserId:    src.UserId,
+			Name:      src.Name,
+			Nickname:  src.Nickname,
+			Email:     src.Email,
+			CreatedAt: src.CreatedAt,
 		}
 	}
+
 	return ctx.JSON(http.StatusOK, res)
 }

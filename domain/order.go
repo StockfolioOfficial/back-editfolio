@@ -22,6 +22,10 @@ type Order struct {
 	DoneAt      *time.Time `gorm:"size:6;index"`
 }
 
+func (Order) TableName() string{
+	return "order"
+}
+
 type CreateOrderOption struct {
 	Orderer     User
 	Requirement *string
@@ -39,13 +43,13 @@ func CreateOrder(option CreateOrderOption) Order {
 type OrderGeneralState uint8
 
 const (
-	// OrderGeneralStateReady, 의뢰 요청만 된 리스트
+	// OrderGeneralStateReady 의뢰 요청만 된 리스트
 	OrderGeneralStateReady OrderGeneralState = iota
 
-	// OrderGeneralStateProcessing, 의뢰 진행 중인 리스트
+	// OrderGeneralStateProcessing 의뢰 진행 중인 리스트
 	OrderGeneralStateProcessing
 
-	// OrderGeneralStateDone, 의뢰가 끝난 리스트
+	// OrderGeneralStateDone 의뢰가 끝난 리스트
 	OrderGeneralStateDone
 )
 
