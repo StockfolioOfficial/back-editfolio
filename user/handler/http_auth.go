@@ -20,12 +20,13 @@ type TokenResponse struct {
 	Token string `json:"token" validate:"required" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"`
 } // @name TokenResponse
 
+// @Tags (Auth) 공용 기능
 // @Summary 로그인 기능
 // @Description 로그인하여 jwt 토큰을 받아오는 기능
 // @Accept json
 // @Produce json
-// @Param signInUserBody body SignInRequest true "sign in user"
-// @Success 200 {object} TokenResponse
+// @Param signInUserBody body SignInRequest true "로그인 데이터 정보"
+// @Success 200 {object} TokenResponse "로그인 완료"
 // @Router /sign-in [post]
 func (h *HttpHandler) signInUser(ctx echo.Context) error {
 	var req SignInRequest
