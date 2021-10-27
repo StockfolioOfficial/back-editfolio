@@ -8,6 +8,7 @@ import (
 	"github.com/stockfolioofficial/back-editfolio/core/di/scope"
 	"github.com/stockfolioofficial/back-editfolio/helloworld/handler"
 	handler3 "github.com/stockfolioofficial/back-editfolio/order/handler"
+	handler4 "github.com/stockfolioofficial/back-editfolio/orderState/handler"
 	handler2 "github.com/stockfolioofficial/back-editfolio/user/handler"
 )
 
@@ -17,6 +18,7 @@ func OnStart(
 	helloWorld *handler.HelloWorldController,
 	user *handler2.UserController,
 	order *handler3.OrderController,
+	orderState *handler4.OrderStateController,
 ) app.OnStart {
 	return func() error {
 		logLevel := log.ErrorLevel
@@ -34,6 +36,7 @@ func OnStart(
 			helloWorld,
 			user,
 			order,
+			orderState,
 		)
 		return nil
 	}

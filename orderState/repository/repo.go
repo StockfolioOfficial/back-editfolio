@@ -38,8 +38,17 @@ type repo struct {
 	db *gorm.DB
 }
 
+func (r *repo) FetchFull(ctx context.Context) (list []domain.OrderState, err error) {
+	err = r.db.WithContext(ctx).
+		Order("`id` asc").
+		Find(&list).Error
+	return
+}
+
 func (r *repo) FetchByIds(ctx context.Context, ids []uint8) (list []domain.OrderState, err error) {
-	err = r.db.WithContext(ctx).Find(&list, ids).Error
+	err = r.db.WithContext(ctx).
+		Order("`id` asc").
+		Find(&list, ids).Error
 	return
 }
 
