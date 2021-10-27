@@ -247,7 +247,7 @@ func (c *OrderController) getOrderDetailInfo(ctx echo.Context) error {
 }
 
 type UpdateOrderInfoRequest struct {
-	OrderId    uuid.UUID `param:"userId" json:"-" validate:"required" example:"150e8400-p11y-41d4-a716-446655440000"`
+	OrderId    uuid.UUID `json:"-" param:"orderId" validate:"required" example:"150e8400-p11y-41d4-a716-446655440000"`
 	DueDate    time.Time `json:"dueDate" validate:"required" example:"2021-10-30T00:00:00+00:00"`
 	Assignee   uuid.UUID `json:"assignee" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 	OrderState uint8     `json:"orderState" validate:"required" example:"3"`
