@@ -11,7 +11,9 @@ import (
 	handler3 "github.com/stockfolioofficial/back-editfolio/order/handler"
 	repository4 "github.com/stockfolioofficial/back-editfolio/order/repository"
 	usecase2 "github.com/stockfolioofficial/back-editfolio/order/usecase"
+	handler4 "github.com/stockfolioofficial/back-editfolio/orderState/handler"
 	repository5 "github.com/stockfolioofficial/back-editfolio/orderState/repository"
+	usecase3 "github.com/stockfolioofficial/back-editfolio/orderState/usecase"
 	"github.com/stockfolioofficial/back-editfolio/user/adapter"
 	handler2 "github.com/stockfolioofficial/back-editfolio/user/handler"
 	"github.com/stockfolioofficial/back-editfolio/user/repository"
@@ -25,7 +27,7 @@ var DI = wire.NewSet(
 	adapterSet,
 	repositorySet,
 	useCaseSet,
-	handlerSet,
+	controllerSet,
 	lifecycleSet,
 )
 
@@ -54,12 +56,14 @@ var repositorySet = wire.NewSet(
 var useCaseSet = wire.NewSet(
 	usecase.NewUserUseCase,
 	usecase2.NewOrderUseCase,
+	usecase3.NewOrderStateUseCase,
 )
 
-var handlerSet = wire.NewSet(
+var controllerSet = wire.NewSet(
 	handler.NewHelloWorldController,
 	handler2.NewUserController,
 	handler3.NewOrderController,
+	handler4.NewOrderStateController,
 )
 
 var lifecycleSet = wire.NewSet(
