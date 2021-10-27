@@ -6,18 +6,18 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func NewHelloWorldHttpHandler() *HttpHandler {
-	return &HttpHandler{}
+func NewHelloWorldController() *HelloWorldController {
+	return &HelloWorldController{}
 }
 
-type HttpHandler struct{}
+type HelloWorldController struct{}
 
-func (h *HttpHandler) HelloWorld(ctx echo.Context) error {
+func (h *HelloWorldController) HelloWorld(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, echo.Map{
 		"hello": "world",
 	})
 }
 
-func (h *HttpHandler) Bind(e *echo.Echo) {
+func (h *HelloWorldController) Bind(e *echo.Echo) {
 	e.GET("/", h.HelloWorld)
 }

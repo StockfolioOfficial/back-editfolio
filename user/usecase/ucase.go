@@ -41,7 +41,7 @@ func (u *ucase) CreateCustomerUser(ctx context.Context, cu domain.CreateCustomer
 	exists, err := u.userRepo.GetByUsername(c, cu.Email)
 
 	if exists != nil {
-		err = domain.ItemAlreadyExist
+		err = domain.ErrItemAlreadyExist
 		return
 	}
 
@@ -81,7 +81,7 @@ func (u *ucase) UpdateCustomerUser(ctx context.Context, cu domain.UpdateCustomer
 		if exists.Id == cu.UserId {
 			user = exists
 		} else {
-			err = domain.ItemAlreadyExist
+			err = domain.ErrItemAlreadyExist
 			return
 		}
 	}
@@ -94,7 +94,7 @@ func (u *ucase) UpdateCustomerUser(ctx context.Context, cu domain.UpdateCustomer
 	}
 
 	if !domain.ExistsCustomer(user) {
-		err = domain.ItemNotFound
+		err = domain.ErrItemNotFound
 		return
 	}
 
@@ -130,12 +130,12 @@ func (u *ucase) UpdateAdminPassword(ctx context.Context, up domain.UpdateAdminPa
 
 	user, err := u.userRepo.GetById(c, up.UserId)
 	if !domain.ExistsAdmin(user) {
-		err = domain.ItemNotFound
+		err = domain.ErrItemNotFound
 		return
 	}
 
 	if !user.ComparePassword(up.OldPassword) {
-		err = domain.UserWrongPassword
+		err = domain.ErrUserWrongPassword
 		return
 	}
 
@@ -157,7 +157,7 @@ func (u *ucase) UpdateAdminInfo(ctx context.Context, ui domain.UpdateAdminInfo) 
 		if exists.Id == ui.UserId {
 			user = exists
 		} else {
-			err = domain.ItemAlreadyExist
+			err = domain.ErrItemAlreadyExist
 			return
 		}
 	}
@@ -170,7 +170,7 @@ func (u *ucase) UpdateAdminInfo(ctx context.Context, ui domain.UpdateAdminInfo) 
 	}
 
 	if !domain.ExistsAdmin(user) {
-		err = domain.ItemNotFound
+		err = domain.ErrItemNotFound
 		return
 	}
 
@@ -205,7 +205,7 @@ func (u *ucase) UpdateAdminInfoBySuperAdmin(ctx context.Context, fu domain.Updat
 		if exists.Id == fu.UserId {
 			user = exists
 		} else {
-			err = domain.ItemAlreadyExist
+			err = domain.ErrItemAlreadyExist
 			return
 		}
 	}
@@ -218,7 +218,7 @@ func (u *ucase) UpdateAdminInfoBySuperAdmin(ctx context.Context, fu domain.Updat
 	}
 
 	if !domain.ExistsAdmin(user) {
-		err = domain.ItemNotFound
+		err = domain.ErrItemNotFound
 		return
 	}
 
@@ -251,7 +251,7 @@ func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (token str
 	}
 
 	if user == nil {
-		err = domain.ItemNotFound
+		err = domain.ErrItemNotFound
 		return
 	}
 
@@ -259,7 +259,7 @@ func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (token str
 		// token generate
 		token, err = u.tokenAdapter.Generate(*user)
 	} else {
-		err = domain.UserWrongPassword
+		err = domain.ErrUserWrongPassword
 	}
 
 	return
@@ -272,7 +272,7 @@ func (u *ucase) DeleteCustomerUser(ctx context.Context, du domain.DeleteCustomer
 	user, err := u.userRepo.GetById(c, du.Id)
 
 	if user == nil || !user.IsCustomer() {
-		err = domain.ItemNotFound
+		err = domain.ErrItemNotFound
 		return
 	}
 
@@ -287,7 +287,7 @@ func (u *ucase) CreateAdminUser(ctx context.Context, au domain.CreateAdminUser) 
 	email, err := u.userRepo.GetByUsername(c, au.Email)
 
 	if email != nil {
-		err = domain.ItemAlreadyExist
+		err = domain.ErrItemAlreadyExist
 		return
 	}
 
@@ -352,7 +352,7 @@ func (u *ucase) DeleteAdminUser(ctx context.Context, da domain.DeleteAdminUser) 
 	user, err := u.userRepo.GetById(c, da.Id)
 
 	if user == nil || user.IsDeleted() || !user.IsAdmin() {
-		err = domain.ItemNotFound
+		err = domain.ErrItemNotFound
 		return
 	}
 
