@@ -180,3 +180,15 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 
 	return
 }
+
+func (u *ucase) GetRecentProcessingOrder(ctx context.Context, userId uuid.UUID) (ro domain.RecentOrderInfo, err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	order, err := u.orderRepo.GetRecentByOrdererId(c, userId)
+	if err != nil {
+		return
+	}
+
+	return
+}

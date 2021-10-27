@@ -22,7 +22,7 @@ type Order struct {
 	DoneAt      *time.Time `gorm:"size:6;index"`
 }
 
-func (Order) TableName() string{
+func (Order) TableName() string {
 	return "order"
 }
 
@@ -97,4 +97,14 @@ type OrderInfo struct {
 type OrderUseCase interface {
 	RequestOrder(ctx context.Context, or RequestOrder) (uuid.UUID, error)
 	Fetch(ctx context.Context, option FetchOrderOption) (res []OrderInfo, err error)
+}
+
+type RecentOrderInfo struct {
+	AssigneeNickname   *string
+	DoneAt             *time.Time
+	OrderId            uuid.UUID
+	OrderState         uint8
+	OrderStateContent  string
+	OrderedAt          time.Time
+	RemainingEditCount uint8
 }
