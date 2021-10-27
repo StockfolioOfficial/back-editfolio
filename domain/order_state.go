@@ -8,6 +8,10 @@ type OrderState struct {
 	Orders  []Order `gorm:"foreignKey:State"`
 }
 
+func (OrderState) TableName() string {
+	return "order_state"
+}
+
 type OrderStateRepository interface {
 	FetchByIds(ctx context.Context, ids []uint8) ([]OrderState, error)
 	GetById(ctx context.Context, id uint8) (*OrderState, error)
