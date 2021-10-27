@@ -21,6 +21,23 @@ type repo struct {
 	db *gorm.DB
 }
 
+func (r *repo) FetchAllAdmin(ctx context.Context, option domain.FetchAdminOption) (list []domain.User, err error) {
+	err = r.db.WithContext(ctx).
+		Joins("Manager").
+		Where("`role` = ?", domain.AdminUserRole).
+		Or("`role` = ?", domain.SuperAdminUserRole).
+		Find(&list).Error
+	return
+}
+
+func (r *repo) FetchAllCustomer(ctx context.Context, option domain.FetchCustomerOption) (list []domain.User, err error) {
+	err = r.db.WithContext(ctx).
+		Joins("Customer").
+		Where("`role` = ?", domain.CustomerUserRole).
+		Find(&list).Error
+	return
+}
+
 func (r *repo) GetByUsername(ctx context.Context, username string) (user *domain.User, err error) {
 	var entity domain.User
 	err = r.db.WithContext(ctx).
