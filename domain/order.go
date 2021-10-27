@@ -40,6 +40,7 @@ type OrderRepository interface {
 	With(tx gormx.Tx) OrderTxRepository
 	GetById(ctx context.Context, orderId uuid.UUID) (*Order, error)
 	GetRecentByOrdererId(ctx context.Context, ordererId uuid.UUID) (*Order, error)
+	GetByOrderList(ctx context.Context, orderState uint8) ([]Order, error)
 }
 
 type OrderTxRepository interface {

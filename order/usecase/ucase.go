@@ -11,8 +11,8 @@ import (
 
 func NewOrderUseCase(
 	orderRepo domain.OrderRepository,
-	userRepo  domain.UserRepository,
-	timeout   time.Duration,
+	userRepo domain.UserRepository,
+	timeout time.Duration,
 ) domain.OrderUseCase {
 	return &ucase{
 		orderRepo: orderRepo,
@@ -60,5 +60,18 @@ func (u *ucase) RequestOrder(ctx context.Context, or domain.RequestOrder) (newId
 	order := domain.CreateOrder(orderOption)
 	newId = order.Id
 	err = u.orderRepo.Save(c, &order)
+	return
+}
+
+func (u *ucase) FetchOrderList(ctx context.Context, stmt uint8) (orderList []domain.Order, err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	orderList, err = u.orderRepo.GetByOrderList(c, stmt)
+	if err != nil {
+		return
+	}
+
+	// orders에 아무 것도 조회가 안되면 No content ? or Not Found ? or OK ?
 	return
 }

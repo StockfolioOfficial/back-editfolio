@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/stockfolioofficial/back-editfolio/core/debug"
 	"github.com/stockfolioofficial/back-editfolio/util/echox"
-	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -67,6 +69,18 @@ func (c *OrderController) createOrder(ctx echo.Context, userId uuid.UUID) error 
 		log.WithError(err).Error(tag, "video requirement failed")
 		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
 	}
+}
+
+type OrderStateRequest struct {
+	State uint8 `json:"-" query:"state" example:1`
+}
+
+type OrderStateResponse struct {
+	OrderId     uuid.UUID  `json:"orderId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	OrderedAt   time.Time  `json:"orderedAt" example:"2021-10-27 12:00"`
+	Orderer     uuid.UUID  `json:"orderer" validate:"required" example:"437ae8fe-2349-4125-b4a3-b3154b63e8dc"`
+	Assignee    *uuid.UUID `json:"orderer" validate:"required" example:"13aa33a3-1832-8819-k41d-jlkl490dfkjl"`
+	Requirement *string    `json:"requirement" example:"예쁘게 잘 편집해 주세요~"`
 }
 
 func (c *OrderController) Bind(e *echo.Echo) {

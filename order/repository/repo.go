@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+
 	"gorm.io/gorm/clause"
 
 	"github.com/google/uuid"
@@ -32,6 +33,19 @@ func (r *repo) GetRecentByOrdererId(ctx context.Context, ordererId uuid.UUID) (o
 		return
 	} else if err == nil {
 		order = &entity
+	}
+	return
+}
+
+func (r *repo) GetByOrderList(ctx context.Context, orderState uint8) (order []domain.Order, err error) {
+	var entitySet []domain.Order
+	err = r.db.WithContext(ctx).Where("`state` = ?", orderState).Error
+
+	if err == gorm.ErrRecordNotFound {
+		err = nil
+		return
+	} else if err == nil {
+		order = entitySet
 	}
 	return
 }
