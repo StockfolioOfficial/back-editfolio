@@ -57,9 +57,9 @@ var useCaseSet = wire.NewSet(
 )
 
 var handlerSet = wire.NewSet(
-	handler.NewHelloWorldHttpHandler,
-	handler2.NewUserHttpHandler,
-	handler3.NewOrderHttpHandler,
+	handler.NewHelloWorldController,
+	handler2.NewUserController,
+	handler3.NewOrderController,
 )
 
 var lifecycleSet = wire.NewSet(

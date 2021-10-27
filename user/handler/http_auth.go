@@ -27,7 +27,7 @@ type TokenResponse struct {
 // @Param signInUserBody body SignInRequest true "sign in user"
 // @Success 200 {object} TokenResponse
 // @Router /sign-in [post]
-func (h *HttpHandler) signInUser(ctx echo.Context) error {
+func (h *UserController) signInUser(ctx echo.Context) error {
 	var req SignInRequest
 	err := ctx.Bind(&req)
 	if err != nil {
@@ -45,7 +45,7 @@ func (h *HttpHandler) signInUser(ctx echo.Context) error {
 	switch err {
 	case nil:
 		return ctx.JSON(http.StatusOK, TokenResponse{Token: token})
-	case domain.ItemNotFound, domain.UserWrongPassword:
+	case domain.ErrItemNotFound, domain.ErrUserWrongPassword:
 		return ctx.JSON(http.StatusUnauthorized, domain.UserSignInFailedResponse)
 	default:
 		log.WithError(err).Error(tag, "sign in user, unhandled error useCase.SignInUser")

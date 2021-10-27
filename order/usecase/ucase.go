@@ -57,7 +57,7 @@ func (u *ucase) RequestOrder(ctx context.Context, or domain.RequestOrder) (newId
 	}
 
 	if exists != nil {
-		err = domain.ItemAlreadyExist
+		err = domain.ErrItemAlreadyExist
 		return
 	}
 
