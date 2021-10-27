@@ -25,7 +25,7 @@ func (r *repo) GetRecentByOrdererId(ctx context.Context, ordererId uuid.UUID) (o
 	var entity domain.Order
 	err = r.db.WithContext(ctx).
 		Order("ordered_at desc").
-		Where("`orderer` = ? ", ordererId).
+		Where("`orderer` = ?", ordererId).
 		First(&entity).Error
 	if err == gorm.ErrRecordNotFound {
 		err = nil
