@@ -25,11 +25,18 @@ func JwtBypassOnDebug() echo.MiddlewareFunc {
 	}
 }
 
-func JwtBypassOnDebugWithRole(role domain.UserRole) echo.MiddlewareFunc {
+func JwtBypassOnDebugWithRole(role ...domain.UserRole) echo.MiddlewareFunc {
 	return func(handlerFunc echo.HandlerFunc) echo.HandlerFunc {
 
 		if config.IsDebug {
-			return handleJwtBypass(handlerFunc, (*string)(&role))
+			var condition map[domain.UserRole]bool
+			if len(role) > 0 {
+				condition = make(map[domain.UserRole]bool)
+				for _, r := range role {
+					condition[r] = true
+				}
+			}
+			return handleJwtBypass(handlerFunc, condition)
 		}
 
 		return func(ctx echo.Context) error {
@@ -38,7 +45,7 @@ func JwtBypassOnDebugWithRole(role domain.UserRole) echo.MiddlewareFunc {
 	}
 }
 
-func handleJwtBypass(handlerFunc echo.HandlerFunc, role *string) echo.HandlerFunc {
+func handleJwtBypass(handlerFunc echo.HandlerFunc, roleCondition map[domain.UserRole]bool) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		var jwtDummy struct {
 			Sub   string   `json:"sub"`
@@ -63,7 +70,7 @@ func handleJwtBypass(handlerFunc echo.HandlerFunc, role *string) echo.HandlerFun
 			return ctx.JSON(http.StatusUnauthorized, domain.InvalidateTokenResponse)
 		}
 
-		if role != nil && !hasRole(jwtDummy.Roles, *role) {
+		if roleCondition != nil && !hasRole(jwtDummy.Roles, roleCondition) {
 			return ctx.JSON(http.StatusUnauthorized, domain.NoPermissionResponse)
 		}
 
@@ -72,9 +79,9 @@ func handleJwtBypass(handlerFunc echo.HandlerFunc, role *string) echo.HandlerFun
 	}
 }
 
-func hasRole(roles []string, role string) bool {
+func hasRole(roles []string, roleCondition map[domain.UserRole]bool) bool {
 	for _, v := range roles {
-		if v == role {
+		if roleCondition[domain.UserRole(v)] {
 			return true
 		}
 	}

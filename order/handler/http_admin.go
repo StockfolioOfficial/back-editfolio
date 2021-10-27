@@ -5,6 +5,7 @@ import (
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/stockfolioofficial/back-editfolio/domain"
+	"github.com/stockfolioofficial/back-editfolio/util/pointer"
 	"net/http"
 	"time"
 )
@@ -201,3 +202,75 @@ func (c *OrderController) internalFetchOrder(ctx echo.Context, state domain.Orde
 	return
 }
 
+type orderDetailAssigneeInfoResponse struct {
+	Id       uuid.UUID `json:"assignee" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Name     string    `json:"assigneeName" example:"담당 편집자 이름"`
+	Nickname string    `json:"assigneeNickname" example:"담당 편집자 닉네임"`
+}
+
+type OrderDetailInfoResponse struct {
+	OrderId            uuid.UUID                        `json:"orderId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	OrderedAt          time.Time                        `json:"orderedAt" validate:"required" example:"2021-10-27T04:44:18+00:00"`
+	DueDate            *time.Time                       `json:"dueDate" example:"2021-10-30T00:00:00+00:00"`
+	Assignee           *orderDetailAssigneeInfoResponse `json:"assignee"`
+	OrderState         uint8                            `json:"orderState" validate:"required" example:"3"`
+	OrderStateContent  string                           `json:"orderStateContent" validate:"required" example:"이펙트 추가 중"`
+	RemainingEditCount uint16                           `json:"remainingEditCount" validate:"required" example:"2"`
+	Requirement        string                           `json:"requirement"`
+} // @name OrderDetailInfoResponse
+
+// @Tags (Order) 어드민 기능
+// @Security Auth-Jwt-Bearer
+// @Summary [어드민] 의뢰 상세 정보
+// @Description 의뢰 상세 정보 가져오는 기능, 역할(role)이 'ADMIN', 'SUPER_ADMIN' 이여야함
+// @Accept json
+// @Produce json
+// @Param order_id path string true "의뢰 식별 아이디(UUID)"
+// @Success 200 {object} OrderDetailInfoResponse true "정보 가져오기 완료"
+// @Router /order/{order_id} [get]
+func (c *OrderController) getOrderDetailInfo(ctx echo.Context) error {
+	//TODO 채우세요
+	return ctx.JSON(http.StatusOK, OrderDetailInfoResponse{
+		OrderedAt: time.Now(),
+		DueDate:   pointer.Time(time.Now().Add(time.Hour * 24 * 3)),
+		Assignee: &orderDetailAssigneeInfoResponse{
+			Id:       uuid.New(),
+			Name:     "담당 편집자 이름",
+			Nickname: "담당 편집자 닉네임",
+		},
+		OrderState:         3,
+		OrderStateContent:  "이펙트 추가 중",
+		RemainingEditCount: 2,
+		Requirement:        "요청 사항",
+	})
+}
+
+type UpdateOrderInfoRequest struct {
+	DueDate    time.Time `json:"dueDate" validate:"required" example:"2021-10-30T00:00:00+00:00"`
+	Assignee   uuid.UUID `json:"assignee" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	OrderState uint8     `json:"orderState" validate:"required" example:"3"`
+}
+
+// @Tags (Order) 어드민 기능
+// @Security Auth-Jwt-Bearer
+// @Summary [어드민] 의뢰 정보 수정
+// @Description 의뢰 정보 수정하는 기능, 역할(role)이 'ADMIN', 'SUPER_ADMIN' 이여야함
+// @Accept json
+// @Produce json
+// @Param order_id path string true "의뢰 식별 아이디(UUID)"
+// @Param requestBody body UpdateOrderInfoRequest true "편집 의뢰 요청 데이터 구조"
+// @Success 204 "정보 수정 완료"
+// @Router /order/{order_id} [put]
+func (c *OrderController) updateOrderDetailInfo(ctx echo.Context) error {
+	//TODO 채우세요
+	var req UpdateOrderInfoRequest
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "update order, request body bind error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	return ctx.NoContent(http.StatusNoContent)
+}

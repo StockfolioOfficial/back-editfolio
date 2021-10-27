@@ -58,6 +58,7 @@ func (c *OrderController) createOrder(ctx echo.Context, userId uuid.UUID) error 
 }
 
 type RecentOrderInfoResponse struct {
+	OrderId            uuid.UUID  `json:"orderId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 	OrderedAt          time.Time  `json:"orderedAt" validate:"required" example:"2021-10-27T04:44:18+00:00"`
 	DueDate            *time.Time `json:"dueDate" example:"2021-10-30T00:00:00+00:00"`
 	AssigneeNickname   *string    `json:"assigneeNickname" example:"담당 편집자 닉네임"`

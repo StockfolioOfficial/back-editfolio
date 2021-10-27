@@ -20,17 +20,28 @@ type OrderController struct {
 }
 
 func (c *OrderController) Bind(e *echo.Echo) {
+
+	//CUSTOMER
 	// 진행중인 주문 가져오기
 	e.GET("/order/recent-processing", echox.UserID(c.getRecentProcessingOrder), debug.JwtBypassOnDebugWithRole(domain.CustomerUserRole))
-
 	// 진행중인 주문 완료
 	e.GET("/order/recent-processing/done", echox.UserID(c.myOrderDone), debug.JwtBypassOnDebugWithRole(domain.CustomerUserRole))
-
 	//edit order request
 	e.POST("/order", echox.UserID(c.createOrder), debug.JwtBypassOnDebugWithRole(domain.CustomerUserRole))
 
-	// v1 - fetch
-	e.GET("/order/ready", c.fetchOrderToReady, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
-	e.GET("/order/processing", echox.UserID(c.fetchOrderToProcessing), debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
-	e.GET("/order/done", c.fetchOrderToDone, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
+	//ADMIN
+	e.GET("/order/:orderId", c.getOrderDetailInfo,
+		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
+	e.PUT("/order/:orderId", c.updateOrderDetailInfo,
+		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
+	e.POST("/order/:orderId/edit-done", nil,
+		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole)) // 대기
+
+	// v1 - fetch, todo refactor
+	e.GET("/order/ready", c.fetchOrderToReady,
+		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
+	e.GET("/order/processing", echox.UserID(c.fetchOrderToProcessing),
+		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
+	e.GET("/order/done", c.fetchOrderToDone,
+		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
 }

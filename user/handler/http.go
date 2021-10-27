@@ -24,31 +24,46 @@ type CreatedUserResponse struct {
 	Id uuid.UUID `json:"userId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 } // @name CreatedUserResponse
 
-func (h *UserController) Bind(e *echo.Echo) {
+func (c *UserController) Bind(e *echo.Echo) {
 	// get token
-	e.POST("/sign-in", h.signInUser)
+	e.POST("/sign-in", c.signInUser)
 
-	// ADMIN
+	// ===== ADMIN =====
+	// Fetch admin
+	// v1, todo refactor
+	e.GET("/admin", c.fetchAdmin,
+		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
 	// Self control
 	// Update my info
-	e.PUT("/admin/me", echox.UserID(h.updateAdminMyInfo), debug.JwtBypassOnDebug())
+	e.PUT("/admin/me", echox.UserID(c.updateAdminMyInfo), debug.JwtBypassOnDebug())
 	// Update admin password
-	e.PATCH("/admin/me/pw", echox.UserID(h.updateAdminMyPassword), debug.JwtBypassOnDebug())
+	e.PATCH("/admin/me/pw", echox.UserID(c.updateAdminMyPassword), debug.JwtBypassOnDebug())
 
-	// CUSTOMER
+	// ===== CUSTOMER =====
 	// Customer control
-	// Create customer
-	e.POST("/customer", h.createCustomer, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
-	// Update customer
-	e.PUT("/customer/:userId", h.updateCustomer, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
-	// Delete customer
-	e.DELETE("/customer/:userId", h.deleteCustomerUser, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
+	// Fetch customer
+	// v1, todo refactor
+	e.GET("/customer", c.fetchCustomer,
+		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
 
-	// SUPER_ADMIN
+	// Create customer
+	e.POST("/customer", c.createCustomer,
+		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
+	// Update customer
+	e.PUT("/customer/:userId", c.updateCustomer,
+		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
+	// Delete customer
+	e.DELETE("/customer/:userId", c.deleteCustomerUser,
+		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
+
+	// ===== SUPER_ADMIN =====
 	// Create admin
-	e.POST("/admin", h.createAdmin, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
+	e.POST("/admin", c.createAdmin,
+		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
 	// Update admin info
-	e.PUT("/admin/:userId", h.updateAdminBySuperAdmin, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
+	e.PUT("/admin/:userId", c.updateAdminBySuperAdmin,
+		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
 	// Delete admin
-	e.DELETE("/admin/:userId", h.deleteAdminBySuperAdmin, debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
+	e.DELETE("/admin/:userId", c.deleteAdminBySuperAdmin,
+		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
 }

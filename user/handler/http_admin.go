@@ -1,11 +1,14 @@
 package handler
 
 import (
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/stockfolioofficial/back-editfolio/domain"
+	"math/rand"
 	"net/http"
+	"time"
 )
 
 type UpdateAdminMyInfoRequest struct {
@@ -23,7 +26,7 @@ type UpdateAdminMyInfoRequest struct {
 // @Param requestBody body UpdateAdminMyInfoRequest true "어드민 정보 수정 데이터 구조"
 // @Success 204 "정보 수정 성공"
 // @Router /admin/me [put]
-func (h *UserController) updateAdminMyInfo(ctx echo.Context, userId uuid.UUID) error {
+func (c *UserController) updateAdminMyInfo(ctx echo.Context, userId uuid.UUID) error {
 	var req UpdateAdminMyInfoRequest
 
 	err := ctx.Bind(&req)
@@ -41,7 +44,7 @@ func (h *UserController) updateAdminMyInfo(ctx echo.Context, userId uuid.UUID) e
 		})
 	}
 
-	err = h.useCase.UpdateAdminInfo(ctx.Request().Context(), domain.UpdateAdminInfo{
+	err = c.useCase.UpdateAdminInfo(ctx.Request().Context(), domain.UpdateAdminInfo{
 		UserId:   userId,
 		Name:     req.Name,
 		Username: req.Email,
@@ -75,7 +78,7 @@ type UpdateAdminMyPasswordRequest struct {
 // @Param requestBody body UpdateAdminMyPasswordRequest true "비밀번호 수정 데이터 구조"
 // @Success 204 "비밀번호 변경 성공"
 // @Router /admin/me/pw [patch]
-func (h *UserController) updateAdminMyPassword(ctx echo.Context, userId uuid.UUID) error {
+func (c *UserController) updateAdminMyPassword(ctx echo.Context, userId uuid.UUID) error {
 	var req UpdateAdminMyPasswordRequest
 	err := ctx.Bind(&req)
 	if err != nil {
@@ -85,7 +88,7 @@ func (h *UserController) updateAdminMyPassword(ctx echo.Context, userId uuid.UUI
 		})
 	}
 
-	err = h.useCase.UpdateAdminPassword(ctx.Request().Context(), domain.UpdateAdminPassword{
+	err = c.useCase.UpdateAdminPassword(ctx.Request().Context(), domain.UpdateAdminPassword{
 		UserId:      userId,
 		OldPassword: req.OldPassword,
 		NewPassword: req.NewPassword,
@@ -126,7 +129,7 @@ type CreateCustomerRequest struct {
 // @Param requestBody body CreateCustomerRequest true "고객 생성 정보 데이터 구조"
 // @Success 201 {object} CreatedUserResponse "고객 생성 완료"
 // @Router /customer [post]
-func (h *UserController) createCustomer(ctx echo.Context) error {
+func (c *UserController) createCustomer(ctx echo.Context) error {
 	var req CreateCustomerRequest
 
 	err := ctx.Bind(&req)
@@ -137,7 +140,7 @@ func (h *UserController) createCustomer(ctx echo.Context) error {
 		})
 	}
 
-	newId, err := h.useCase.CreateCustomerUser(ctx.Request().Context(), domain.CreateCustomerUser{
+	newId, err := c.useCase.CreateCustomerUser(ctx.Request().Context(), domain.CreateCustomerUser{
 		Name:   req.Name,
 		Email:  req.Email,
 		Mobile: req.Mobile,
@@ -191,7 +194,7 @@ type UpdateCustomerInfoRequest struct {
 // @Param requestBody body UpdateCustomerInfoRequest true "고객 정보 수정 데이터 구조"
 // @Success 204 "수정 완료"
 // @Router /customer/{user_id} [put]
-func (h *UserController) updateCustomer(ctx echo.Context) error {
+func (c *UserController) updateCustomer(ctx echo.Context) error {
 	var req UpdateCustomerInfoRequest
 
 	err := ctx.Bind(&req)
@@ -202,7 +205,7 @@ func (h *UserController) updateCustomer(ctx echo.Context) error {
 		})
 	}
 
-	err = h.useCase.UpdateCustomerUser(ctx.Request().Context(), domain.UpdateCustomerUser{
+	err = c.useCase.UpdateCustomerUser(ctx.Request().Context(), domain.UpdateCustomerUser{
 		UserId:       req.UserId,
 		Name:         req.Name,
 		ChannelName:  req.ChannelName,
@@ -241,7 +244,7 @@ type DeleteCustomerRequest struct {
 // @Param user_id path string true "고객 식별 아이디(UUID)"
 // @Success 204 "삭제 완료"
 // @Router /customer/{user_id} [delete]
-func (h *UserController) deleteCustomerUser(ctx echo.Context) error {
+func (c *UserController) deleteCustomerUser(ctx echo.Context) error {
 	var req DeleteCustomerRequest
 
 	err := ctx.Bind(&req)
@@ -251,7 +254,7 @@ func (h *UserController) deleteCustomerUser(ctx echo.Context) error {
 			Message: err.Error(),
 		})
 	}
-	err = h.useCase.DeleteCustomerUser(ctx.Request().Context(), domain.DeleteCustomerUser{
+	err = c.useCase.DeleteCustomerUser(ctx.Request().Context(), domain.DeleteCustomerUser{
 		Id: req.Id,
 	})
 
@@ -264,4 +267,102 @@ func (h *UserController) deleteCustomerUser(ctx echo.Context) error {
 		log.WithError(err).Error(tag, "delete customer failed")
 		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
 	}
+}
+
+type FetchCustomerRequest struct {
+	Query string `json:"-" query:"q"`
+}
+
+type CustomerInfoResponse struct {
+	UserId      uuid.UUID `json:"userId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Name        string    `json:"name" validate:"required" example:"(대충 고객 이름)"`
+	ChannelName string    `json:"channelName" validate:"required" example:"(대충 채널 이름)"`
+	ChannelLink string    `json:"channelLink" validate:"required" example:"(대충 채널 url 링크)"`
+	Email       string    `json:"email" validate:"required" example:"example@example.com"`
+	Mobile      string    `json:"mobile" validate:"required" example:"01012345678"`
+	CreatedAt   time.Time `json:"createdAt" validate:"required" example:"2021-10-27T04:44:18+00:00"`
+}
+
+type CustomerInfoListResponse []CustomerInfoResponse
+
+// @Tags (User) 어드민 기능
+// @Security Auth-Jwt-Bearer
+// @Summary [어드민] 고객 목록
+// @Description 고객 목록 가져오는 기능, 역할(role)이 'ADMIN', 'SUPER_ADMIN' 이여야함
+// @Accept json
+// @Produce json
+// @Param q query string false "검색어"
+// @Success 200 {object} CustomerInfoListResponse "성공"
+// @Router /customer [get]
+func (c *UserController) fetchCustomer(ctx echo.Context) error {
+	var req FetchCustomerRequest
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "fetch customer, request data bind error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	res := make(CustomerInfoListResponse, 10)
+	for i := range res {
+		res[i] = CustomerInfoResponse{
+			UserId:      uuid.New(),
+			Name:        fmt.Sprintf("클린한-고객명-%02d", i),
+			ChannelName: fmt.Sprintf("클린한-채널명-%02d", i),
+			ChannelLink: fmt.Sprintf("클린한-채널링크-%02d", i),
+			Email:       fmt.Sprintf("example%02d@example.com", i),
+			Mobile:      fmt.Sprintf("010%08d\n", r.Int31n(100000000)),
+			CreatedAt:   time.Now().Add(-time.Second * time.Duration(r.Int63n(1000000))),
+		}
+	}
+	return ctx.JSON(http.StatusOK, res)
+}
+
+type FetchAdminRequest struct {
+	Query string `json:"-" query:"q"`
+}
+
+type AdminInfoResponse struct {
+	UserId    uuid.UUID `json:"userId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Name      string    `json:"name" validate:"required" example:"(대충 어드민 이름)"`
+	Nickname  string    `json:"nickname" validate:"required" example:"(대충 어드민 닉네임)"`
+	Email     string    `json:"email" validate:"required" example:"example@example.com"`
+	CreatedAt time.Time `json:"createdAt" validate:"required" example:"2021-10-27T04:44:18+00:00"`
+}
+
+type AdminInfoListResponse []AdminInfoResponse
+
+// @Tags (User) 어드민 기능
+// @Security Auth-Jwt-Bearer
+// @Summary [어드민] 어드민 목록
+// @Description 어드민 목록 가져오는 기능, 역할(role)이 'ADMIN', 'SUPER_ADMIN' 이여야함
+// @Accept json
+// @Produce json
+// @Param q query string false "검색어"
+// @Success 200 {object} AdminInfoListResponse "성공"
+// @Router /admin [get]
+func (c *UserController) fetchAdmin(ctx echo.Context) error {
+	var req FetchCustomerRequest
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "fetch customer, request data bind error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	res := make(AdminInfoListResponse, 10)
+	for i := range res {
+		res[i] = AdminInfoResponse{
+			UserId:    uuid.New(),
+			Name:      fmt.Sprintf("클린한-관리자-이름-%02d", i),
+			Nickname:  fmt.Sprintf("클린한-관리자-닉네임-%02d", i),
+			Email:     fmt.Sprintf("example%02d@example.com", i),
+			CreatedAt: time.Now().Add(-time.Second * time.Duration(r.Int63n(1000000))),
+		}
+	}
+	return ctx.JSON(http.StatusOK, res)
 }
