@@ -168,6 +168,9 @@ type UserRepository interface {
 	GetById(ctx context.Context, userId uuid.UUID) (*User, error)
 	Transaction(ctx context.Context, fn func(userRepo UserTxRepository) error, options ...*sql.TxOptions) error
 	With(tx gormx.Tx) UserTxRepository
+
+	FetchAllAdmin(ctx context.Context, option FetchAdminOption) ([]User, error)
+	FetchAllCustomer(ctx context.Context, option FetchCustomerOption) ([]User, error)
 }
 
 type UserTxRepository interface {
@@ -226,6 +229,32 @@ type UpdateCustomerUser struct {
 	Memo         string
 }
 
+type FetchAdminOption struct {
+	Query string
+}
+
+type AdminInfoData struct {
+	UserId    uuid.UUID
+	Name      string
+	Nickname  string
+	Email     string
+	CreatedAt time.Time
+}
+
+type FetchCustomerOption struct {
+	Query string
+}
+
+type CustomerInfoData struct {
+	UserId      uuid.UUID
+	Name        string
+	ChannelName string
+	ChannelLink string
+	Email       string
+	Mobile      string
+	CreatedAt   time.Time
+}
+
 type UserUseCase interface {
 	CreateCustomerUser(ctx context.Context, cu CreateCustomerUser) (uuid.UUID, error)
 	UpdateCustomerUser(ctx context.Context, cu UpdateCustomerUser) error
@@ -236,6 +265,9 @@ type UserUseCase interface {
 	DeleteCustomerUser(ctx context.Context, du DeleteCustomerUser) error
 	CreateAdminUser(ctx context.Context, au CreateAdminUser) (uuid.UUID, error)
 	DeleteAdminUser(ctx context.Context, da DeleteAdminUser) error
+
+	FetchAllAdmin(ctx context.Context, option FetchAdminOption) ([]AdminInfoData, error)
+	FetchAllCustomer(ctx context.Context, option FetchCustomerOption) ([]CustomerInfoData, error)
 }
 
 type TokenGenerateAdapter interface {
