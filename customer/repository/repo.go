@@ -7,7 +7,6 @@ import (
 	"github.com/stockfolioofficial/back-editfolio/domain"
 	"github.com/stockfolioofficial/back-editfolio/util/gormx"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 func NewCustomerRepository(db *gorm.DB) domain.CustomerRepository {
@@ -17,6 +16,11 @@ func NewCustomerRepository(db *gorm.DB) domain.CustomerRepository {
 
 type repo struct {
 	db *gorm.DB
+}
+
+func (r *repo) FetchByIds(ctx context.Context, ids []uuid.UUID) (list []domain.Customer, err error) {
+	err = r.db.WithContext(ctx).Find(&list, ids).Error
+	return
 }
 
 func (r *repo) GetById(ctx context.Context, userId uuid.UUID) (customer *domain.Customer, err error) {
@@ -51,12 +55,7 @@ func (r *repo) Get() *gorm.DB {
 }
 
 func (r *repo) Save(ctx context.Context, customer *domain.Customer) error {
-	//TODO
-	//refactor
-	//gormx.Upsert(ctx, r.db, customer)
-	return r.db.WithContext(ctx).
-		Clauses(clause.OnConflict{UpdateAll: true}).
-		Create(customer).Error
+	return gormx.Upsert(ctx, r.db, customer)
 }
 
 func (r *repo) With(tx gormx.Tx) domain.CustomerTxRepository {

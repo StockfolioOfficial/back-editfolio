@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 
-	"gorm.io/gorm/clause"
-
 	"github.com/google/uuid"
 	"github.com/stockfolioofficial/back-editfolio/domain"
 	"github.com/stockfolioofficial/back-editfolio/util/gormx"
@@ -37,25 +35,33 @@ func (r *repo) GetRecentByOrdererId(ctx context.Context, ordererId uuid.UUID) (o
 	return
 }
 
-func (r *repo) GetByOrderList(ctx context.Context, orderState uint8) (order []domain.Order, err error) {
-	var entitySet []domain.Order
-	err = r.db.WithContext(ctx).Where("`state` = ?", orderState).Error
+func (r *repo) Fetch(ctx context.Context, option domain.FetchOrderOption) (list []domain.Order, err error) {
+	db := r.db.WithContext(ctx)
 
-	if err == gorm.ErrRecordNotFound {
-		err = nil
-		return
-	} else if err == nil {
-		order = entitySet
+	switch option.OrderState {
+	case domain.OrderGeneralStateReady:
+		db = db.Where("`assignee` IS NULL AND `done_at` IS NULL")
+	case domain.OrderGeneralStateProcessing:
+		if option.Assignee == nil {
+			db = db.Where("`assignee` IS NOT NULL AND `done_at` IS NULL")
+		} else {
+			db = db.Where("`assignee` = ? AND `done_at` IS NULL", option.Assignee)
+		}
+	case domain.OrderGeneralStateDone:
+		db = db.Where("`done_at` IS NOT NULL")
 	}
+
+	//TODO
+	//if len(option.Query) > 0 {
+	//	db = db.Where()
+	//}
+
+	err = db.Find(&list).Error
 	return
 }
 
 func (r *repo) Save(ctx context.Context, order *domain.Order) error {
-	//TODO refactor
-	//return gormx.Upsert(ctx, r.db, order)
-	return r.db.WithContext(ctx).
-		Clauses(clause.OnConflict{UpdateAll: true}).
-		Create(order).Error
+	return gormx.Upsert(ctx, r.db, order)
 }
 
 func (r *repo) Get() *gorm.DB {
