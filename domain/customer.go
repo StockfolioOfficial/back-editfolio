@@ -42,6 +42,7 @@ func CreateCustomer(option CustomerCreateOption) Customer {
 
 type CustomerRepository interface {
 	Save(ctx context.Context, customer *Customer) error
+	FetchByIds(ctx context.Context, ids []uuid.UUID) ([]Customer, error)
 	GetById(ctx context.Context, userId uuid.UUID) (*Customer, error)
 	GetByUsername(ctx context.Context, username string) (*User, error)
 	With(tx gormx.Tx) CustomerTxRepository

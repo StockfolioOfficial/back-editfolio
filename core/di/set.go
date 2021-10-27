@@ -11,6 +11,7 @@ import (
 	handler3 "github.com/stockfolioofficial/back-editfolio/order/handler"
 	repository4 "github.com/stockfolioofficial/back-editfolio/order/repository"
 	usecase2 "github.com/stockfolioofficial/back-editfolio/order/usecase"
+	repository5 "github.com/stockfolioofficial/back-editfolio/orderState/repository"
 	"github.com/stockfolioofficial/back-editfolio/user/adapter"
 	handler2 "github.com/stockfolioofficial/back-editfolio/user/handler"
 	"github.com/stockfolioofficial/back-editfolio/user/repository"
@@ -47,6 +48,7 @@ var repositorySet = wire.NewSet(
 	repository2.NewManagerRepository,
 	repository3.NewCustomerRepository,
 	repository4.NewOrderRepository,
+	repository5.NewOrderStateRepository,
 )
 
 var useCaseSet = wire.NewSet(
