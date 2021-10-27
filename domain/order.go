@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stockfolioofficial/back-editfolio/util/gormx"
+	"github.com/stockfolioofficial/back-editfolio/util/pointer"
 )
 
 type Order struct {
@@ -93,4 +94,13 @@ type OrderInfo struct {
 type OrderUseCase interface {
 	RequestOrder(ctx context.Context, or RequestOrder) (uuid.UUID, error)
 	Fetch(ctx context.Context, option FetchOrderOption) (res []OrderInfo, err error)
+	MyOrderDone(ctx context.Context, ud OrderDone) (err error)
+}
+
+type OrderDone struct {
+	UserId uuid.UUID
+}
+
+func (u *Order) Done() {
+	u.DoneAt = pointer.Time(time.Now())
 }

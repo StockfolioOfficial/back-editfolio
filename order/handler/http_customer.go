@@ -1,13 +1,14 @@
 package handler
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/stockfolioofficial/back-editfolio/domain"
 	"github.com/stockfolioofficial/back-editfolio/util/pointer"
-	"net/http"
-	"time"
 )
 
 type CreateOrderRequest struct {
@@ -95,9 +96,31 @@ type DoneOrderResponse struct {
 // @Summary [고객] 진행중인 편집 의뢰 완료
 // @Description 고객이 진행중인 편집 의뢰 완료 기능, 역할(role)이 'CUSTOMER' 이여야함
 // @Accept json
+// @Param user_id path string true "user id"
 // @Success 200 {object} DoneOrderResponse true "의뢰 완료 요청 성공"
 // @Router /order/recent-processing/done [post]
 func (c *OrderController) myOrderDone(ctx echo.Context, userId uuid.UUID) error {
 	//TODO 채우세요
-	return ctx.JSON(http.StatusOK, DoneOrderResponse{Id: uuid.New()})
+	var req DoneOrderResponse
+
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "done order response, request body bind error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	err = c.useCase.MyOrderDone(ctx.Request().Context(), domain.OrderDone{
+		UserId: userId,
+	})
+
+	switch err {
+	case nil:
+		return ctx.NoContent(http.StatusNoContent)
+	case domain.ErrUserNotCustomer:
+		return ctx.JSON(http.StatusBadRequest, domain.ErrUserNotCustomer)
+	default:
+		return ctx.JSON(http.StatusOK, DoneOrderResponse{Id: uuid.New()})
+	}
 }

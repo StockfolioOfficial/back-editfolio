@@ -17,6 +17,8 @@ var (
 
 	ErrItemAlreadyExist = errors.New("item already exsits")
 
+	ErrUserNotCustomer = errors.New("not customer")
+
 	InvalidateTokenResponse = ErrorResponse{
 		ErrorCode: pointer.String("A-1"),
 		Message:   "unauthorized",

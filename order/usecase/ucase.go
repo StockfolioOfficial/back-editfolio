@@ -2,8 +2,9 @@ package usecase
 
 import (
 	"context"
-	"golang.org/x/sync/errgroup"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/google/uuid"
 
@@ -13,7 +14,7 @@ import (
 func NewOrderUseCase(
 	orderRepo domain.OrderRepository,
 	userRepo domain.UserRepository,
-	managerRepo  domain.ManagerRepository,
+	managerRepo domain.ManagerRepository,
 	customerRepo domain.CustomerRepository,
 	orderStateRepo domain.OrderStateRepository,
 	timeout time.Duration,
@@ -92,9 +93,9 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 	for i := range list {
 		src := list[i]
 		res[i] = domain.OrderInfo{
-			OrderId:            src.Id,
-			OrderedAt:          src.OrderedAt,
-			DoneAt:             src.DoneAt,
+			OrderId:   src.Id,
+			OrderedAt: src.OrderedAt,
+			DoneAt:    src.DoneAt,
 		}
 
 		dst := &res[i]
@@ -176,6 +177,43 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 	if err != nil { // 에러 일때 empty list 리턴
 		res = []domain.OrderInfo{}
 	}
+
+	return
+}
+
+func (u *ucase) MyOrderDone(ctx context.Context, ud domain.OrderDone) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	user, err := u.userRepo.GetById(c, ud.UserId)
+
+	if err != nil {
+		return
+	}
+
+	if user.Role != domain.CustomerUserRole {
+		err = domain.ErrUserNotCustomer
+		return
+	}
+
+	if user.Customer.OrderableCount > 0 {
+		user.Customer.OrderableCount -= 1
+	}
+
+	order, err := u.orderRepo.GetRecentByOrdererId(c, ud.UserId)
+	order.Done()
+
+	err = u.userRepo.Transaction(c, func(ur domain.UserTxRepository) error {
+		or := u.orderRepo.With(ur)
+		g, gc := errgroup.WithContext(c)
+		g.Go(func() error {
+			return ur.Save(gc, user)
+		})
+		g.Go(func() error {
+			return or.Save(gc, order)
+		})
+		return g.Wait()
+	})
 
 	return
 }

@@ -25,7 +25,7 @@ func (c *OrderController) Bind(e *echo.Echo) {
 	// 진행중인 주문 가져오기
 	e.GET("/order/recent-processing", echox.UserID(c.getRecentProcessingOrder), debug.JwtBypassOnDebugWithRole(domain.CustomerUserRole))
 	// 진행중인 주문 완료
-	e.GET("/order/recent-processing/done", echox.UserID(c.myOrderDone), debug.JwtBypassOnDebugWithRole(domain.CustomerUserRole))
+	e.POST("/order/recent-processing/done", echox.UserID(c.myOrderDone), debug.JwtBypassOnDebugWithRole(domain.CustomerUserRole))
 	//edit order request
 	e.POST("/order", echox.UserID(c.createOrder), debug.JwtBypassOnDebugWithRole(domain.CustomerUserRole))
 
