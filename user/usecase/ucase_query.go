@@ -76,6 +76,10 @@ func (u *ucase) GetCustomerInfoDetailByUserId(ctx context.Context, userId uuid.U
 		return domain.CustomerInfoDetail{}, err
 	}
 
+	if detail == nil {
+		return domain.CustomerInfoDetail{}, domain.ErrItemNotFound
+	}
+
 	if detail.Customer == nil {
 		return domain.CustomerInfoDetail{}, errors.New("join failed customer info data")
 	}

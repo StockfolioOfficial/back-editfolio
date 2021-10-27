@@ -333,6 +333,63 @@ func (c *UserController) fetchCustomer(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, res)
 }
 
+
+type CustomerDetailInfoResponse struct {
+	UserId       uuid.UUID `json:"userId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Name         string    `json:"name" validate:"required" example:"(대충 고객 이름)"`
+	ChannelName  string    `json:"channelName" validate:"required" example:"(대충 채널 이름)"`
+	ChannelLink  string    `json:"channelLink" validate:"required" example:"(대충 채널 url 링크)"`
+	Email        string    `json:"email" validate:"required" example:"example@example.com"`
+	Mobile       string    `json:"mobile" validate:"required" example:"01012345678"`
+	PersonaLink  string    `json:"personaLink" validate:"required" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
+	OnedriveLink string    `json:"onedriveLink" validate:"required" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
+	Memo         string    `json:"memo" example:"이사람 까다로움"`
+}
+
+// @Tags (User) 어드민 기능
+// @Security Auth-Jwt-Bearer
+// @Summary [어드민] 고객 상세 정보
+// @Description 고객 상제 정보 가져오는 기능, 역할(role)이 'ADMIN', 'SUPER_ADMIN' 이여야함
+// @Accept json
+// @Produce json
+// @Param user_id path string true "고객 식별 아이디(UUID)"
+// @Success 200 {object} CustomerDetailInfoResponse "성공"
+// @Router /customer/{user_id} [get]
+func (c *UserController) getCustomerDetailInfo(ctx echo.Context) error {
+	var req struct {
+		UserId uuid.UUID `json:"-" param:"customerId"`
+	}
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "get customer detail info, request data bind error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	detail, err := c.useCase.GetCustomerInfoDetailByUserId(ctx.Request().Context(), req.UserId)
+
+	switch err {
+	case nil:
+		return ctx.JSON(http.StatusOK, CustomerDetailInfoResponse{
+			UserId:       detail.UserId,
+			Name:         detail.Name,
+			ChannelName:  detail.ChannelName,
+			ChannelLink:  detail.ChannelLink,
+			Email:        detail.Email,
+			Mobile:       detail.Mobile,
+			PersonaLink:  detail.PersonaLink,
+			OnedriveLink: detail.OnedriveLink,
+			Memo:         detail.Memo,
+		})
+	case domain.ErrItemNotFound:
+		return ctx.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
+	default:
+		log.WithError(err).Error(tag, "fetch full customer, unhandled error useCase.FetchAllCustomer")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+}
+
 type FetchAdminRequest struct {
 	Query string `json:"-" query:"q"`
 }

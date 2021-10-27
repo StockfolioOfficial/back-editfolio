@@ -44,6 +44,7 @@ func (r *repo) GetByIdWithCustomer(ctx context.Context, id uuid.UUID) (user *dom
 	var entity domain.User
 	err = r.db.WithContext(ctx).
 		Joins("Customer").
+		Where("`deleted_at` IS NULL").
 		First(&entity, id).Error
 	if err == nil {
 		user = &entity
