@@ -2,8 +2,9 @@ package usecase
 
 import (
 	"context"
-	"golang.org/x/sync/errgroup"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/google/uuid"
 
@@ -13,7 +14,7 @@ import (
 func NewOrderUseCase(
 	orderRepo domain.OrderRepository,
 	userRepo domain.UserRepository,
-	managerRepo  domain.ManagerRepository,
+	managerRepo domain.ManagerRepository,
 	customerRepo domain.CustomerRepository,
 	orderStateRepo domain.OrderStateRepository,
 	timeout time.Duration,
@@ -46,7 +47,7 @@ func (u *ucase) RequestOrder(ctx context.Context, or domain.RequestOrder) (newId
 		return
 	}
 
-	if domain.ExistsCustomer(user) {
+	if !domain.ExistsCustomer(user) {
 		err = domain.ErrNoPermission
 		return
 	}
@@ -92,9 +93,9 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 	for i := range list {
 		src := list[i]
 		res[i] = domain.OrderInfo{
-			OrderId:            src.Id,
-			OrderedAt:          src.OrderedAt,
-			DoneAt:             src.DoneAt,
+			OrderId:   src.Id,
+			OrderedAt: src.OrderedAt,
+			DoneAt:    src.DoneAt,
 		}
 
 		dst := &res[i]
