@@ -35,6 +35,7 @@ type ManagerRepository interface {
 	Save(ctx context.Context, manager *Manager) error
 	FetchByIds(ctx context.Context, ids []uuid.UUID) ([]Manager, error)
 	GetById(ctx context.Context, userId uuid.UUID) (*Manager, error)
+	GetByNickname(ctx context.Context, nickname string) (*Manager, error)
 	With(tx gormx.Tx) ManagerTxRepository
 }
 

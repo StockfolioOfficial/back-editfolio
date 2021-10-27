@@ -2,8 +2,9 @@ package usecase
 
 import (
 	"context"
-	"golang.org/x/sync/errgroup"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/google/uuid"
 
@@ -13,7 +14,7 @@ import (
 func NewOrderUseCase(
 	orderRepo domain.OrderRepository,
 	userRepo domain.UserRepository,
-	managerRepo  domain.ManagerRepository,
+	managerRepo domain.ManagerRepository,
 	customerRepo domain.CustomerRepository,
 	orderStateRepo domain.OrderStateRepository,
 	timeout time.Duration,
@@ -92,9 +93,9 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 	for i := range list {
 		src := list[i]
 		res[i] = domain.OrderInfo{
-			OrderId:            src.Id,
-			OrderedAt:          src.OrderedAt,
-			DoneAt:             src.DoneAt,
+			OrderId:   src.Id,
+			OrderedAt: src.OrderedAt,
+			DoneAt:    src.DoneAt,
 		}
 
 		dst := &res[i]
@@ -178,4 +179,40 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 	}
 
 	return
+}
+
+func (u *ucase) UpdateOrderDetailInfo(ctx context.Context, uo *domain.UpdateOrderInfo) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	orderExists, orderErr := u.orderRepo.GetById(c, uo.OrderId)
+	adminExists, adminErr := u.managerRepo.GetById(c, uo.Assignee)
+	orderStateExists, orderStateErr := u.orderStateRepo.GetById(c, uo.OrderState)
+
+	if orderErr != nil {
+		err = orderErr
+		return
+	}
+
+	if adminErr != nil {
+		err = adminErr
+		return
+	}
+
+	if orderStateErr != nil {
+		err = orderStateErr
+		return
+	}
+
+	if orderExists == nil || adminExists == nil || orderStateExists == nil {
+		err = domain.ErrItemNotFound
+		return
+	}
+
+	orderExists.DueDate = &uo.DueDate
+	orderExists.Assignee = (*uuid.UUID)(&uo.Assignee)
+	orderExists.State = uo.OrderState
+
+	return u.orderRepo.Save(c, orderExists)
+
 }

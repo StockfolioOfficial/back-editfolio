@@ -90,7 +90,15 @@ type OrderInfo struct {
 	DoneAt             *time.Time
 }
 
+type UpdateOrderInfo struct {
+	OrderId    uuid.UUID
+	DueDate    time.Time
+	Assignee   uuid.UUID
+	OrderState uint8
+}
+
 type OrderUseCase interface {
 	RequestOrder(ctx context.Context, or RequestOrder) (uuid.UUID, error)
 	Fetch(ctx context.Context, option FetchOrderOption) (res []OrderInfo, err error)
+	UpdateOrderDetailInfo(ctx context.Context, uo *UpdateOrderInfo) (err error)
 }

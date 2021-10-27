@@ -1,13 +1,14 @@
 package handler
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/stockfolioofficial/back-editfolio/domain"
 	"github.com/stockfolioofficial/back-editfolio/util/pointer"
-	"net/http"
-	"time"
 )
 
 type OrderFetchRequest struct {
@@ -246,6 +247,7 @@ func (c *OrderController) getOrderDetailInfo(ctx echo.Context) error {
 }
 
 type UpdateOrderInfoRequest struct {
+	OrderId    uuid.UUID `param:"userId" json:"-" validate:"required" example:"150e8400-p11y-41d4-a716-446655440000"`
 	DueDate    time.Time `json:"dueDate" validate:"required" example:"2021-10-30T00:00:00+00:00"`
 	Assignee   uuid.UUID `json:"assignee" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 	OrderState uint8     `json:"orderState" validate:"required" example:"3"`
@@ -272,5 +274,19 @@ func (c *OrderController) updateOrderDetailInfo(ctx echo.Context) error {
 		})
 	}
 
-	return ctx.NoContent(http.StatusNoContent)
+	err = c.useCase.UpdateOrderDetailInfo(ctx.Request().Context(), &domain.UpdateOrderInfo{
+		OrderId:    req.OrderId,
+		DueDate:    req.DueDate,
+		Assignee:   req.Assignee,
+		OrderState: req.OrderState,
+	})
+
+	switch err {
+	case nil:
+		return ctx.NoContent(http.StatusNoContent)
+	case domain.ErrItemNotFound:
+		return ctx.JSON(http.StatusNotFound, domain.ErrItemNotFound)
+	default:
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
 }
