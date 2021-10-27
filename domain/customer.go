@@ -15,7 +15,7 @@ type Customer struct {
 	ChannelLink    string     `gorm:"size:2048;not null"`
 	Email          string     `gorm:"size:320;index;not null"`
 	Mobile         string     `gorm:"size:24;index;not null"`
-	OrderableCount int        `gorm:"column:orderable_cnt"`
+	OrderableCount uint32     `gorm:"column:orderable_cnt"`
 	PersonaLink    string     `gorm:"size:2048;not null"`
 	OnedriveLink   string     `gorm:"size:2048;not null"`
 	Memo           string     `gorm:"type:text"`
@@ -47,7 +47,6 @@ type CustomerRepository interface {
 	Save(ctx context.Context, customer *Customer) error
 	FetchByIds(ctx context.Context, ids []uuid.UUID) ([]Customer, error)
 	GetById(ctx context.Context, userId uuid.UUID) (*Customer, error)
-	GetByUsername(ctx context.Context, username string) (*User, error)
 	With(tx gormx.Tx) CustomerTxRepository
 }
 
