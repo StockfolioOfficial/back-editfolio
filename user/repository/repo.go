@@ -24,8 +24,9 @@ type repo struct {
 func (r *repo) FetchAllAdmin(ctx context.Context, option domain.FetchAdminOption) (list []domain.User, err error) {
 	err = r.db.WithContext(ctx).
 		Joins("Manager").
-		Where("`role` = ?", domain.AdminUserRole).
-		Or("`role` = ?", domain.SuperAdminUserRole).
+		Where("`deleted_at` IS NULL").
+		Where(r.db.Where("`role` = ?", domain.AdminUserRole).
+			Or("`role` = ?", domain.SuperAdminUserRole)).
 		Find(&list).Error
 	return
 }
@@ -33,6 +34,7 @@ func (r *repo) FetchAllAdmin(ctx context.Context, option domain.FetchAdminOption
 func (r *repo) FetchAllCustomer(ctx context.Context, option domain.FetchCustomerOption) (list []domain.User, err error) {
 	err = r.db.WithContext(ctx).
 		Joins("Customer").
+		Where("`deleted_at` IS NULL").
 		Where("`role` = ?", domain.CustomerUserRole).
 		Find(&list).Error
 	return

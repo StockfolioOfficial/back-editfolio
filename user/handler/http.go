@@ -28,6 +28,7 @@ func (c *UserController) Bind(e *echo.Echo) {
 	// get token
 	e.POST("/sign-in", c.signInUser)
 
+
 	// ===== ADMIN =====
 	// Fetch admin
 	// v1, todo refactor
@@ -55,6 +56,8 @@ func (c *UserController) Bind(e *echo.Echo) {
 	// Delete customer
 	e.DELETE("/customer/:userId", c.deleteCustomerUser,
 		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
+
+	e.GET("/customer/me.simply", echox.UserID(c.getCustomerMyInfoSimply), debug.JwtBypassOnDebug())
 
 	// ===== SUPER_ADMIN =====
 	// Create admin
