@@ -18,6 +18,11 @@ type repo struct {
 	db *gorm.DB
 }
 
+func (r *repo) FetchByIds(ctx context.Context, ids []uuid.UUID) (list []domain.Manager, err error) {
+	err = r.db.WithContext(ctx).Find(&list, ids).Error
+	return
+}
+
 func (r *repo) GetById(ctx context.Context, userId uuid.UUID) (manager *domain.Manager, err error) {
 	var entity domain.Manager
 

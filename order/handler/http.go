@@ -1,0 +1,36 @@
+package handler
+
+import (
+	"github.com/labstack/echo/v4"
+	"github.com/stockfolioofficial/back-editfolio/core/debug"
+	"github.com/stockfolioofficial/back-editfolio/domain"
+	"github.com/stockfolioofficial/back-editfolio/util/echox"
+)
+
+const (
+	tag = "[ORDER] "
+)
+
+func NewOrderController(useCase domain.OrderUseCase) *OrderController {
+	return &OrderController{useCase: useCase}
+}
+
+type OrderController struct {
+	useCase domain.OrderUseCase
+}
+
+func (c *OrderController) Bind(e *echo.Echo) {
+	// 진행중인 주문 가져오기
+	e.GET("/order/recent-processing", echox.UserID(c.getRecentProcessingOrder), debug.JwtBypassOnDebugWithRole(domain.CustomerUserRole))
+
+	// 진행중인 주문 완료
+	e.GET("/order/recent-processing/done", echox.UserID(c.myOrderDone), debug.JwtBypassOnDebugWithRole(domain.CustomerUserRole))
+
+	//edit order request
+	e.POST("/order", echox.UserID(c.createOrder), debug.JwtBypassOnDebugWithRole(domain.CustomerUserRole))
+
+	// v1 - fetch
+	e.GET("/order/ready", c.fetchOrderToReady, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
+	e.GET("/order/processing", echox.UserID(c.fetchOrderToProcessing), debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
+	e.GET("/order/done", c.fetchOrderToDone, debug.JwtBypassOnDebugWithRole(domain.AdminUserRole))
+}

@@ -29,8 +29,8 @@ type User struct {
 	DeletedAt *time.Time `gorm:"size:6;index"`
 	Customer  *Customer  `gorm:"foreignKey:Id"`
 	Manager   *Manager   `gorm:"foreignKey:Id"`
-	MyOrder   []Order    `gorm:"foreignKey:orderer"`
-	Ticket    []Order    `gorm:"foreignKey:assignee"`
+	MyJob     []Order    `gorm:"foreignKey:Orderer"`
+	Ticket    []Order    `gorm:"foreignKey:Assignee"`
 }
 
 func (User) TableName() string {
@@ -65,7 +65,7 @@ func (u *User) LoadManagerInfo(ctx context.Context, repo ManagerRepository) (err
 	}
 
 	if u.Manager == nil {
-		err = ItemNotFound
+		err = ErrItemNotFound
 	}
 	return
 }
@@ -101,13 +101,9 @@ func (u *User) LoadCustomerInfo(ctx context.Context, repo CustomerRepository) (e
 	}
 
 	if u.Customer == nil {
-		err = ItemNotFound
+		err = ErrItemNotFound
 	}
 	return
-}
-
-func ExistsAdmin(u *User) bool {
-	return u != nil && !u.IsDeleted() && u.IsAdmin()
 }
 
 func (u *User) UpdatePassword(plainPass string) {
@@ -122,7 +118,7 @@ func (u *User) StampUpdate() {
 
 func (u *User) UpdateManagerInfo(username, name, nickname string) {
 	defer u.stampUpdate()
-	u.Username = username
+	u.UpdateUsername(username)
 	if u.Manager == nil {
 		return
 	}
@@ -156,6 +152,10 @@ func (u *User) UpdateCustomerInfo(name, channelName, channelLink, email, mobile,
 	customer.PersonaLink = personaLink
 	customer.OnedriveLink = onedriveLink
 	customer.Memo = memo
+}
+
+func ExistsAdmin(u *User) bool {
+	return u != nil && !u.IsDeleted() && u.IsAdmin()
 }
 
 func ExistsCustomer(u *User) bool {
@@ -199,6 +199,14 @@ type UpdateAdminInfo struct {
 	Nickname string
 }
 
+type UpdateAdminInfoBySuperAdmin struct {
+	UserId   uuid.UUID
+	Name     string
+	Password string
+	Username string
+	Nickname string
+}
+
 type CreateAdminUser struct {
 	Name     string
 	Email    string
@@ -223,6 +231,7 @@ type UserUseCase interface {
 	UpdateCustomerUser(ctx context.Context, cu UpdateCustomerUser) error
 	UpdateAdminPassword(ctx context.Context, up UpdateAdminPassword) error
 	UpdateAdminInfo(ctx context.Context, ui UpdateAdminInfo) error
+	UpdateAdminInfoBySuperAdmin(ctx context.Context, fu UpdateAdminInfoBySuperAdmin) error
 	SignInUser(ctx context.Context, si SignInUser) (string, error)
 	DeleteCustomerUser(ctx context.Context, du DeleteCustomerUser) error
 	CreateAdminUser(ctx context.Context, au CreateAdminUser) (uuid.UUID, error)

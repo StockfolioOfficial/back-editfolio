@@ -1,20 +1,22 @@
 package di
 
 import (
-	"time"
-
-	repository2 "github.com/stockfolioofficial/back-editfolio/manager/repository"
-
 	"github.com/google/wire"
 	"github.com/stockfolioofficial/back-editfolio/core/app"
 	"github.com/stockfolioofficial/back-editfolio/core/config"
 	repository3 "github.com/stockfolioofficial/back-editfolio/customer/repository"
 	"github.com/stockfolioofficial/back-editfolio/domain"
 	"github.com/stockfolioofficial/back-editfolio/helloworld/handler"
+	repository2 "github.com/stockfolioofficial/back-editfolio/manager/repository"
+	handler3 "github.com/stockfolioofficial/back-editfolio/order/handler"
+	repository4 "github.com/stockfolioofficial/back-editfolio/order/repository"
+	usecase2 "github.com/stockfolioofficial/back-editfolio/order/usecase"
+	repository5 "github.com/stockfolioofficial/back-editfolio/orderState/repository"
 	"github.com/stockfolioofficial/back-editfolio/user/adapter"
 	handler2 "github.com/stockfolioofficial/back-editfolio/user/handler"
 	"github.com/stockfolioofficial/back-editfolio/user/repository"
 	"github.com/stockfolioofficial/back-editfolio/user/usecase"
+	"time"
 )
 
 var DI = wire.NewSet(
@@ -45,15 +47,19 @@ var repositorySet = wire.NewSet(
 	repository.NewUserRepository,
 	repository2.NewManagerRepository,
 	repository3.NewCustomerRepository,
+	repository4.NewOrderRepository,
+	repository5.NewOrderStateRepository,
 )
 
 var useCaseSet = wire.NewSet(
 	usecase.NewUserUseCase,
+	usecase2.NewOrderUseCase,
 )
 
 var handlerSet = wire.NewSet(
-	handler.NewHelloWorldHttpHandler,
-	handler2.NewUserHttpHandler,
+	handler.NewHelloWorldController,
+	handler2.NewUserController,
+	handler3.NewOrderController,
 )
 
 var lifecycleSet = wire.NewSet(

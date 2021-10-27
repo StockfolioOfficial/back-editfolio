@@ -20,14 +20,15 @@ type TokenResponse struct {
 	Token string `json:"token" validate:"required" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"`
 } // @name TokenResponse
 
+// @Tags (Auth) 공용 기능
 // @Summary 로그인 기능
 // @Description 로그인하여 jwt 토큰을 받아오는 기능
 // @Accept json
 // @Produce json
-// @Param signInUserBody body SignInRequest true "sign in user"
-// @Success 200 {object} TokenResponse
-// @Router /user/sign [post]
-func (h *HttpHandler) signInUser(ctx echo.Context) error {
+// @Param signInUserBody body SignInRequest true "로그인 데이터 정보"
+// @Success 200 {object} TokenResponse "로그인 완료"
+// @Router /sign-in [post]
+func (h *UserController) signInUser(ctx echo.Context) error {
 	var req SignInRequest
 	err := ctx.Bind(&req)
 	if err != nil {
@@ -45,7 +46,7 @@ func (h *HttpHandler) signInUser(ctx echo.Context) error {
 	switch err {
 	case nil:
 		return ctx.JSON(http.StatusOK, TokenResponse{Token: token})
-	case domain.ItemNotFound, domain.UserWrongPassword:
+	case domain.ErrItemNotFound, domain.ErrUserWrongPassword:
 		return ctx.JSON(http.StatusUnauthorized, domain.UserSignInFailedResponse)
 	default:
 		log.WithError(err).Error(tag, "sign in user, unhandled error useCase.SignInUser")

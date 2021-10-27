@@ -14,6 +14,15 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.GH_TOKEN }}
+        submodules: true
+      
+   # Runs a set of commands using the runners shell
+    - name: release file setup
+      run: |
+        mv ./release/config.json config.json
+        mv -f ./release/main.go main.go
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
