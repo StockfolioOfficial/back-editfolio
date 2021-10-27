@@ -25,28 +25,14 @@ func (r *repo) FetchByIds(ctx context.Context, ids []uuid.UUID) (list []domain.C
 
 func (r *repo) GetById(ctx context.Context, userId uuid.UUID) (customer *domain.Customer, err error) {
 	var entity domain.Customer
-
 	err = r.db.WithContext(ctx).First(&entity, userId).Error
-	if err == gorm.ErrRecordNotFound {
+
+	if err == nil {
+		customer = &entity
+	} else if err == gorm.ErrRecordNotFound {
 		err = nil
-		return
 	}
 
-	customer = &entity
-	return
-}
-
-func (r *repo) GetByUsername(ctx context.Context, username string) (user *domain.User, err error) {
-	var entity domain.User
-	err = r.db.WithContext(ctx).
-		Where("`username` = ?", username).
-		First(&entity).Error
-	if err == gorm.ErrRecordNotFound {
-		err = nil
-		return
-	}
-
-	user = &entity
 	return
 }
 

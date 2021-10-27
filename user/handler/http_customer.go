@@ -3,7 +3,8 @@ package handler
 import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/stockfolioofficial/back-editfolio/util/pointer"
+	log "github.com/sirupsen/logrus"
+	"github.com/stockfolioofficial/back-editfolio/domain"
 	"net/http"
 	"time"
 )
@@ -39,12 +40,36 @@ type CustomerSimpleInfoResponse struct {
 // @Success 200 {object} CustomerSimpleInfoResponse "성공"
 // @Router /customer/me.simply [get]
 func (c *UserController) getCustomerMyInfoSimply(ctx echo.Context, userId uuid.UUID) error {
-	return ctx.JSON(http.StatusOK, CustomerSimpleInfoResponse{
-		UserId:         userId,
-		Name:           "더미 이름",
-		SubscribeStart: pointer.Time(time.Now()),
-		SubscribeEnd:   pointer.Time(time.Now().AddDate(0, 1, 0)),
-		OrderableCount: 3,
+	detail, err := c.useCase.GetCustomerInfoDetailByUserId(ctx.Request().Context(), userId)
+	if err != nil {
+		log.WithError(err).Error(tag, "get customer detail, unhandled error useCase.GetCustomerInfoDetailByUserId")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+
+	res := CustomerSimpleInfoResponse{
+		UserId:         detail.UserId,
+		Name:           detail.Name,
+		SubscribeStart: detail.SubscribeStart,
+		SubscribeEnd:   detail.SubscribeEnd,
+		OrderableCount: detail.OrderableCount,
 		SimpleNotify:   CustomerSimpleNotifyNone,
-	})
+	}
+
+	now := time.Now()
+	if detail.SubscribeStart == nil && detail.SubscribeEnd == nil {
+		res.SimpleNotify = CustomerSimpleNotifyNeedBuySubscribe
+	} else if detail.SubscribeStart != nil &&
+		detail.SubscribeEnd != nil &&
+		now.After(*detail.SubscribeEnd) {
+		res.SimpleNotify = CustomerSimpleNotifyNeedBuySubscribe
+	} else {
+		log.WithField("detail", detail).Error("의도 하지 않는 구독 일자")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+
+	if detail.OrderableCount == 0 {
+		res.SimpleNotify = CustomerSimpleNotifyNeedBuyOneEdit
+	}
+
+	return ctx.JSON(http.StatusOK, res)
 }

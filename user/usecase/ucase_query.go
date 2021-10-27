@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"github.com/google/uuid"
 	"github.com/stockfolioofficial/back-editfolio/domain"
 )
 
@@ -64,4 +65,35 @@ func (u *ucase) FetchAllCustomer(ctx context.Context, option domain.FetchCustome
 	}
 
 	return
+}
+
+func (u *ucase) GetCustomerInfoDetailByUserId(ctx context.Context, userId uuid.UUID) (domain.CustomerInfoDetail, error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	detail, err := u.userRepo.GetByIdWithCustomer(c, userId)
+	if err != nil {
+		return domain.CustomerInfoDetail{}, err
+	}
+
+	if detail.Customer == nil {
+		return domain.CustomerInfoDetail{}, errors.New("join failed customer info data")
+	}
+
+	return domain.CustomerInfoDetail{
+		UserId:         detail.Id,
+		Name:           detail.Customer.Name,
+		ChannelName:    detail.Customer.ChannelName,
+		ChannelLink:    detail.Customer.ChannelLink,
+		Email:          detail.Customer.Email,
+		Mobile:         detail.Customer.Mobile,
+		OrderableCount: detail.Customer.OrderableCount,
+		PersonaLink:    detail.Customer.PersonaLink,
+		OnedriveLink:   detail.Customer.OnedriveLink,
+		Memo:           detail.Customer.Memo,
+		SubscribeStart: detail.Customer.SubscribeStart,
+		SubscribeEnd:   detail.Customer.SubscribeEnd,
+		CreatedAt:      detail.CreatedAt,
+		UpdatedAt:      detail.UpdatedAt,
+	}, nil
 }
