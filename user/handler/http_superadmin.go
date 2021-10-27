@@ -31,7 +31,7 @@ type CreateAdminRequest struct {
 // @Param requestBody body CreateAdminRequest true "어드민 생성 정보 데이터 구조"
 // @Success 201 {object} CreatedUserResponse "어드민 생성 완료"
 // @Router /admin [post]
-func (h *UserController) createAdmin(ctx echo.Context) error {
+func (c *UserController) createAdmin(ctx echo.Context) error {
 	var req CreateAdminRequest
 
 	err := ctx.Bind(&req)
@@ -42,7 +42,7 @@ func (h *UserController) createAdmin(ctx echo.Context) error {
 		})
 	}
 
-	newId, err := h.useCase.CreateAdminUser(ctx.Request().Context(), domain.CreateAdminUser{
+	newId, err := c.useCase.CreateAdminUser(ctx.Request().Context(), domain.CreateAdminUser{
 		Name:     req.Name,
 		Email:    req.Email,
 		Password: req.Password,
@@ -79,7 +79,7 @@ type UpdateAdminInfoRequest struct {
 // @Param user_id path string true "어드민 식별 아이디(UUID)"
 // @Success 204 "어드민 정보 수정 성공"
 // @Router /admin/{user_id} [put]
-func (h *UserController) updateAdminBySuperAdmin(ctx echo.Context) error {
+func (c *UserController) updateAdminBySuperAdmin(ctx echo.Context) error {
 	var req UpdateAdminInfoRequest
 
 	err := ctx.Bind(&req)
@@ -90,7 +90,7 @@ func (h *UserController) updateAdminBySuperAdmin(ctx echo.Context) error {
 		})
 	}
 
-	err = h.useCase.UpdateAdminInfoBySuperAdmin(ctx.Request().Context(), domain.UpdateAdminInfoBySuperAdmin{
+	err = c.useCase.UpdateAdminInfoBySuperAdmin(ctx.Request().Context(), domain.UpdateAdminInfoBySuperAdmin{
 		UserId:   req.UserId,
 		Password: req.Password,
 		Name:     req.Name,
@@ -126,7 +126,7 @@ type DeleteAdminRequest struct {
 // @Param user_id path string true "어드민 식별 아이디(UUID)"
 // @Success 204 "삭제 완료"
 // @Router /admin/{user_id} [delete]
-func (h *UserController) deleteAdminBySuperAdmin(ctx echo.Context) error {
+func (c *UserController) deleteAdminBySuperAdmin(ctx echo.Context) error {
 	var req DeleteAdminRequest
 
 	err := ctx.Bind(&req)
@@ -136,7 +136,7 @@ func (h *UserController) deleteAdminBySuperAdmin(ctx echo.Context) error {
 			Message: err.Error(),
 		})
 	}
-	err = h.useCase.DeleteAdminUser(ctx.Request().Context(), domain.DeleteAdminUser{
+	err = c.useCase.DeleteAdminUser(ctx.Request().Context(), domain.DeleteAdminUser{
 		Id: req.Id,
 	})
 

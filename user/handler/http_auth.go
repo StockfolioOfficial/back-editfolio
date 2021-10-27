@@ -28,7 +28,7 @@ type TokenResponse struct {
 // @Param signInUserBody body SignInRequest true "로그인 데이터 정보"
 // @Success 200 {object} TokenResponse "로그인 완료"
 // @Router /sign-in [post]
-func (h *UserController) signInUser(ctx echo.Context) error {
+func (c *UserController) signInUser(ctx echo.Context) error {
 	var req SignInRequest
 	err := ctx.Bind(&req)
 	if err != nil {
@@ -38,7 +38,7 @@ func (h *UserController) signInUser(ctx echo.Context) error {
 		})
 	}
 
-	token, err := h.useCase.SignInUser(ctx.Request().Context(), domain.SignInUser{
+	token, err := c.useCase.SignInUser(ctx.Request().Context(), domain.SignInUser{
 		Username: req.Username,
 		Password: req.Password,
 	})
