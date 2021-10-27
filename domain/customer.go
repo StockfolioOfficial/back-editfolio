@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stockfolioofficial/back-editfolio/util/gormx"
@@ -18,6 +19,8 @@ type Customer struct {
 	PersonaLink    string    `gorm:"size:2048;not null"`
 	OnedriveLink   string    `gorm:"size:2048;not null"`
 	Memo           string    `gorm:"type:text"`
+	DescribeStart  time.Time `gorm:"size:6"`
+	DescribeEnd    time.Time `gorm:"size:6"`
 }
 
 func (Customer) TableName() string {
