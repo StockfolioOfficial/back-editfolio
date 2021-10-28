@@ -23,6 +23,10 @@ type Order struct {
 	DoneAt      *time.Time `gorm:"size:6;index"`
 }
 
+func (Order) TableName() string {
+	return "order"
+}
+
 type CreateOrderOption struct {
 	Orderer     User
 	Requirement *string
@@ -40,13 +44,13 @@ func CreateOrder(option CreateOrderOption) Order {
 type OrderGeneralState uint8
 
 const (
-	// OrderGeneralStateReady, 의뢰 요청만 된 리스트
+	// OrderGeneralStateReady 의뢰 요청만 된 리스트
 	OrderGeneralStateReady OrderGeneralState = iota
 
-	// OrderGeneralStateProcessing, 의뢰 진행 중인 리스트
+	// OrderGeneralStateProcessing 의뢰 진행 중인 리스트
 	OrderGeneralStateProcessing
 
-	// OrderGeneralStateDone, 의뢰가 끝난 리스트
+	// OrderGeneralStateDone 의뢰가 끝난 리스트
 	OrderGeneralStateDone
 )
 
@@ -91,10 +95,19 @@ type OrderInfo struct {
 	DoneAt             *time.Time
 }
 
+type UpdateOrderInfo struct {
+	OrderId    uuid.UUID
+	DueDate    time.Time
+	Assignee   uuid.UUID
+	OrderState uint8
+}
+
 type OrderUseCase interface {
 	RequestOrder(ctx context.Context, or RequestOrder) (uuid.UUID, error)
 	Fetch(ctx context.Context, option FetchOrderOption) (res []OrderInfo, err error)
 	MyOrderDone(ctx context.Context, ud OrderDone) (orderId uuid.UUID, err error)
+  UpdateOrderDetailInfo(ctx context.Context, uo *UpdateOrderInfo) (err error)
+	GetRecentProcessingOrder(ctx context.Context, userId uuid.UUID) (ro RecentOrderInfo, err error)
 }
 
 type OrderDone struct {
@@ -103,4 +116,14 @@ type OrderDone struct {
 
 func (u *Order) Done() {
 	u.DoneAt = pointer.Time(time.Now())
+}
+
+type RecentOrderInfo struct {
+	AssigneeNickname   *string
+	DueDate            *time.Time
+	OrderId            uuid.UUID
+	OrderState         uint8
+	OrderStateContent  string
+	OrderedAt          time.Time
+	RemainingEditCount uint8
 }

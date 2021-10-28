@@ -25,13 +25,14 @@ func (r *repo) GetRecentByOrdererId(ctx context.Context, ordererId uuid.UUID) (o
 	var entity domain.Order
 	err = r.db.WithContext(ctx).
 		Order("ordered_at desc").
+		Where("`orderer` = ?", ordererId).
 		First(&entity).Error
-	if err == gorm.ErrRecordNotFound {
-		err = nil
-		return
-	} else if err == nil {
+	if err == nil {
 		order = &entity
+	} else if err == gorm.ErrRecordNotFound {
+		err = nil
 	}
+
 	return
 }
 
@@ -40,15 +41,19 @@ func (r *repo) Fetch(ctx context.Context, option domain.FetchOrderOption) (list 
 
 	switch option.OrderState {
 	case domain.OrderGeneralStateReady:
-		db = db.Where("`assignee` IS NULL AND `done_at` IS NULL")
+		db = db.Order("`ordered_at` asc").
+			Where("`assignee` IS NULL AND `done_at` IS NULL")
 	case domain.OrderGeneralStateProcessing:
+		db = db.Order("`ordered_at` asc")
 		if option.Assignee == nil {
 			db = db.Where("`assignee` IS NOT NULL AND `done_at` IS NULL")
 		} else {
 			db = db.Where("`assignee` = ? AND `done_at` IS NULL", option.Assignee)
 		}
 	case domain.OrderGeneralStateDone:
-		db = db.Where("`done_at` IS NOT NULL")
+
+		db = db.Order("`ordered_at` desc").
+			Where("`done_at` IS NOT NULL")
 	}
 
 	//TODO
@@ -81,11 +86,11 @@ func (r *repo) With(tx gormx.Tx) domain.OrderTxRepository {
 func (r *repo) GetById(ctx context.Context, orderId uuid.UUID) (order *domain.Order, err error) {
 	var entity domain.Order
 	err = r.db.WithContext(ctx).First(&entity, orderId).Error
-	if err == gorm.ErrRecordNotFound {
-		err = nil
-		return
-	} else if err == nil {
+	if err == nil {
 		order = &entity
+	} else if err == gorm.ErrRecordNotFound {
+		err = nil
 	}
+
 	return
 }

@@ -47,7 +47,7 @@ func (u *ucase) RequestOrder(ctx context.Context, or domain.RequestOrder) (newId
 		return
 	}
 
-	if domain.ExistsCustomer(user) {
+	if !domain.ExistsCustomer(user) {
 		err = domain.ErrNoPermission
 		return
 	}
@@ -87,9 +87,9 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 	managerIds := make([]uuid.UUID, 0, bufSize)
 	customerIds := make([]uuid.UUID, 0, bufSize)
 
-	stateDst := make(map[uint8]*domain.OrderInfo)
-	managerDst := make(map[uuid.UUID]*domain.OrderInfo)
-	customerDst := make(map[uuid.UUID]*domain.OrderInfo)
+	stateDst := make(map[uint8][]*domain.OrderInfo)
+	managerDst := make(map[uuid.UUID][]*domain.OrderInfo)
+	customerDst := make(map[uuid.UUID][]*domain.OrderInfo)
 	for i := range list {
 		src := list[i]
 		res[i] = domain.OrderInfo{
@@ -100,14 +100,14 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 
 		dst := &res[i]
 
-		stateDst[src.State] = dst
+		stateDst[src.State] = append(stateDst[src.State], dst)
 		statesIds = append(statesIds, src.State)
 
-		managerDst[src.Orderer] = dst
+		customerDst[src.Orderer] = append(customerDst[src.Orderer], dst)
 		customerIds = append(customerIds, src.Orderer)
 
 		if src.Assignee != nil {
-			customerDst[*src.Assignee] = dst
+			managerDst[*src.Assignee] = append(managerDst[*src.Assignee], dst)
 			managerIds = append(managerIds, *src.Assignee)
 		}
 	}
@@ -121,13 +121,16 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 
 		for i := range mList {
 			src := mList[i]
-			dst, ok := managerDst[src.Id]
-			if !ok {
+			dsts := managerDst[src.Id]
+			if len(dsts) == 0 {
 				continue
 			}
 
-			dst.AssigneeName = &src.Name
-			dst.AssigneeNickname = &src.Nickname
+			for i := range dsts {
+				dst := dsts[i]
+				dst.AssigneeName = &src.Name
+				dst.AssigneeNickname = &src.Nickname
+			}
 		}
 
 		return nil
@@ -141,14 +144,17 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 
 		for i := range cList {
 			src := cList[i]
-			dst, ok := customerDst[src.Id]
-			if !ok {
+			dsts := customerDst[src.Id]
+			if len(dsts) == 0 {
 				continue
 			}
 
-			dst.OrdererName = src.Name
-			dst.OrdererChannelName = src.ChannelName
-			dst.OrdererChannelLink = src.ChannelLink
+			for i := range dsts {
+				dst := dsts[i]
+				dst.OrdererName = src.Name
+				dst.OrdererChannelName = src.ChannelName
+				dst.OrdererChannelLink = src.ChannelLink
+			}
 		}
 
 		return nil
@@ -161,13 +167,16 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 
 		for i := range sList {
 			src := sList[i]
-			dst, ok := stateDst[src.Id]
-			if !ok {
+			dsts := stateDst[src.Id]
+			if len(dsts) == 0 {
 				continue
 			}
 
-			dst.OrderState = src.Id
-			dst.OrderStateContent = src.Content
+			for i := range dsts {
+				dst := dsts[i]
+				dst.OrderState = src.Id
+				dst.OrderStateContent = src.Content
+			}
 		}
 
 		return nil
@@ -200,6 +209,101 @@ func (u *ucase) MyOrderDone(ctx context.Context, ud domain.OrderDone) (orderId u
 	order.Done()
 
 	err = u.orderRepo.Save(c, order)
+  return
+}
+
+func (u *ucase) UpdateOrderDetailInfo(ctx context.Context, uo *domain.UpdateOrderInfo) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	var (
+		oExists *domain.Order
+		aExists *domain.Manager
+		sExists *domain.OrderState
+	)
+
+	g, gc := errgroup.WithContext(c)
+	g.Go(func() (err error) {
+		oExists, err = u.orderRepo.GetById(gc, uo.OrderId)
+
+		if err != nil {
+			return err
+		}
+
+		if oExists == nil {
+			err = domain.ErrItemNotFound
+		}
+		return
+	})
+
+	g.Go(func() (err error) {
+		aExists, err = u.managerRepo.GetById(gc, uo.Assignee)
+
+		if err != nil {
+			return err
+		}
+
+		if aExists == nil {
+			err = domain.ErrWeirdData
+		}
+		return
+	})
+
+	g.Go(func() (err error) {
+		sExists, err = u.orderStateRepo.GetById(gc, uo.OrderState)
+
+		if err != nil {
+			return err
+		}
+
+		if sExists == nil {
+			err = domain.ErrWeirdData
+		}
+		return
+	})
+
+	err = g.Wait()
+
+	oExists.DueDate = &uo.DueDate
+	oExists.Assignee = &uo.Assignee
+	oExists.State = uo.OrderState
+
+	return u.orderRepo.Save(c, oExists)
+}
+
+func (u *ucase) GetRecentProcessingOrder(ctx context.Context, userId uuid.UUID) (ro domain.RecentOrderInfo, err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	var order *domain.Order
+	var assignee *domain.Manager
+	var state *domain.OrderState
+
+	g, gc := errgroup.WithContext(c)
+	g.Go(func() (err error) {
+		order, err = u.orderRepo.GetRecentByOrdererId(gc, userId)
+		return
+	})
+	g.Go(func() (err error) {
+		assignee, err = u.managerRepo.GetById(gc, *order.Assignee)
+		return
+	})
+	g.Go(func() (err error) {
+		state, err = u.orderStateRepo.GetById(gc, order.State)
+		return
+	})
+	err = g.Wait()
+	if err != nil {
+		return
+	}
+
+	ro.AssigneeNickname = &assignee.Nickname
+	ro.DueDate = order.DueDate
+	ro.OrderId = order.Id
+	ro.OrderState = order.State
+	ro.OrderStateContent = state.Content
+	ro.OrderedAt = order.OrderedAt
+	ro.RemainingEditCount = uint8(order.EditTotal - order.EditCount)
 
 	return
 }
