@@ -222,7 +222,7 @@ func (u *ucase) UpdateOrderDetailInfo(ctx context.Context, uo *domain.UpdateOrde
 		}
 
 		if aExists == nil {
-			err = domain.ErrItemNotFound // todo bad request 로 에러 핸들링 해주세요
+			err = domain.ErrWeirdData
 		}
 		return
 	})
@@ -235,13 +235,16 @@ func (u *ucase) UpdateOrderDetailInfo(ctx context.Context, uo *domain.UpdateOrde
 		}
 
 		if sExists == nil {
-			err = domain.ErrItemNotFound // todo bad request 로 에러 핸들링 해주세요
+			err = domain.ErrWeirdData
 		}
-		return 
+		return
 	})
 
 	err = g.Wait()
-	// 데이터 업데이트
+
+	oExists.DueDate = &uo.DueDate
+	oExists.Assignee = &uo.Assignee
+	oExists.State = uo.OrderState
 
 	return u.orderRepo.Save(c, oExists)
 
