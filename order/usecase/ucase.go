@@ -190,6 +190,28 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 	return
 }
 
+func (u *ucase) MyOrderDone(ctx context.Context, ud domain.OrderDone) (orderId uuid.UUID, err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	user, err := u.userRepo.GetById(c, ud.UserId)
+
+	if err != nil {
+		return
+	}
+
+	if domain.ExistsCustomer(user) {
+		err = domain.ErrNoPermission
+		return
+	}
+
+	order, err := u.orderRepo.GetRecentByOrdererId(c, ud.UserId)
+	order.Done()
+
+	err = u.orderRepo.Save(c, order)
+  return
+}
+
 func (u *ucase) UpdateOrderDetailInfo(ctx context.Context, uo *domain.UpdateOrderInfo) (err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
