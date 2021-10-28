@@ -237,25 +237,30 @@ func (u *ucase) GetOrderDetailInfo(ctx context.Context, orderId uuid.UUID) (od d
 		return
 	}
 
-	var assignee *domain.Manager
-	var state *domain.OrderState
+
+	
 
 	g, gc := errgroup.WithContext(c)
 	g.Go(func() (err error) {
+		var assignee *domain.Manager
 		assignee, err = u.managerRepo.GetById(gc, *order.Assignee)
 
-		if assignee == nil {
-			od.DueDate = order.DueDate
-			od.OrderId = orderId
-			od.OrderState = order.State
-			od.OrderStateContent = state.Content
-			od.OrderedAt = order.OrderedAt
-			od.RemainingEditCount = uint8(order.EditTotal - order.EditCount)
+		if assignee != nil {
+			od.AssigneeInfo = &domain.AssigneeInfo{
+				Id: assignee.Id,
+				Name: assignee.Name,
+				Nickname: assignee.Nickname,
+			}
 		}
 		return
 	})
 	g.Go(func() (err error) {
+		var state *domain.OrderState
 		state, err = u.orderStateRepo.GetById(gc, order.State)
+		if state != nil {
+			od.OrderState = order.State
+			od.OrderStateContent = state.Content
+		}
 		return
 	})
 	err = g.Wait()
@@ -263,13 +268,8 @@ func (u *ucase) GetOrderDetailInfo(ctx context.Context, orderId uuid.UUID) (od d
 		return
 	}
 
-	od.AssigneeInfo.Id = assignee.Id
-	od.AssigneeInfo.Name = assignee.Name
-	od.AssigneeInfo.Nickname = assignee.Nickname
 	od.DueDate = order.DueDate
 	od.OrderId = orderId
-	od.OrderState = order.State
-	od.OrderStateContent = state.Content
 	od.OrderedAt = order.OrderedAt
 	od.RemainingEditCount = uint8(order.EditTotal - order.EditCount)
 
