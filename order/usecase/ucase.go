@@ -213,7 +213,7 @@ func (u *ucase) GetRecentProcessingOrder(ctx context.Context, userId uuid.UUID) 
 	ro.OrderState = order.State
 	ro.OrderStateContent = state.Content
 	ro.OrderedAt = order.OrderedAt
-	ro.RemainingEditCount = uint8(order.EditCount)
+	ro.RemainingEditCount = uint8(order.EditTotal - order.EditCount)
 
 	return
 }
