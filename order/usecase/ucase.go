@@ -185,34 +185,66 @@ func (u *ucase) UpdateOrderDetailInfo(ctx context.Context, uo *domain.UpdateOrde
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
-	orderExists, orderErr := u.orderRepo.GetById(c, uo.OrderId)
-	adminExists, adminErr := u.managerRepo.GetById(c, uo.Assignee)
-	orderStateExists, orderStateErr := u.orderStateRepo.GetById(c, uo.OrderState)
+	var (
+		oExists *domain.Order
+		aExists *domain.Manager
+		sExists *domain.OrderState
+	)
 
-	if orderErr != nil {
-		err = orderErr
-		return
-	}
+	g, gc := errgroup.WithContext(c)
+	g.Go(func() error {
+		oExists, err = u.orderRepo.GetById(gc, uo.OrderId)
 
-	if adminErr != nil {
-		err = adminErr
-		return
-	}
+		if err != nil {
+			return err
+		}
 
-	if orderStateErr != nil {
-		err = orderStateErr
-		return
-	}
+		if oExists == nil {
+			err = domain.ErrItemNotFound
+			return err
+		}
 
-	if orderExists == nil || adminExists == nil || orderStateExists == nil {
-		err = domain.ErrItemNotFound
-		return
-	}
+		oExists.DueDate = &uo.DueDate
 
-	orderExists.DueDate = &uo.DueDate
-	orderExists.Assignee = (*uuid.UUID)(&uo.Assignee)
-	orderExists.State = uo.OrderState
+		return nil
+	})
 
-	return u.orderRepo.Save(c, orderExists)
+	g.Go(func() error {
+		aExists, err = u.managerRepo.GetById(gc, uo.Assignee)
+
+		if err != nil {
+			return err
+		}
+
+		if aExists == nil {
+			err = domain.ErrItemNotFound
+			return err
+		}
+
+		oExists.Assignee = &uo.Assignee
+
+		return nil
+	})
+
+	g.Go(func() error {
+		sExists, err = u.orderStateRepo.GetById(gc, uo.OrderState)
+
+		if err != nil {
+			return err
+		}
+
+		if sExists == nil {
+			err = domain.ErrItemNotFound
+			return err
+		}
+
+		oExists.State = uo.OrderState
+
+		return nil
+	})
+
+	err = g.Wait()
+
+	return u.orderRepo.Save(c, oExists)
 
 }

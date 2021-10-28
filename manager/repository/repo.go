@@ -36,19 +36,6 @@ func (r *repo) GetById(ctx context.Context, userId uuid.UUID) (manager *domain.M
 	return
 }
 
-func (r *repo) GetByNickname(ctx context.Context, nickName string) (nickname *domain.Manager, err error) {
-	var entity domain.Manager
-
-	err = r.db.WithContext(ctx).First(&entity, nickName).Error
-	if err == gorm.ErrRecordNotFound {
-		err = nil
-		return
-	}
-
-	nickname = &entity
-	return
-}
-
 func (r *repo) Get() *gorm.DB {
 	return r.db
 }

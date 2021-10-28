@@ -264,7 +264,6 @@ type UpdateOrderInfoRequest struct {
 // @Success 204 "정보 수정 완료"
 // @Router /order/{order_id} [put]
 func (c *OrderController) updateOrderDetailInfo(ctx echo.Context) error {
-	//TODO 채우세요
 	var req UpdateOrderInfoRequest
 	err := ctx.Bind(&req)
 	if err != nil {
