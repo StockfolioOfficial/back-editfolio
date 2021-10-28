@@ -233,6 +233,7 @@ func (u *ucase) GetOrderDetailInfo(ctx context.Context, orderId uuid.UUID) (od d
 
 	order, err := u.orderRepo.GetById(c, orderId)
 	if err != nil {
+		err = domain.ErrItemNotFound
 		return
 	}
 
@@ -242,6 +243,15 @@ func (u *ucase) GetOrderDetailInfo(ctx context.Context, orderId uuid.UUID) (od d
 	g, gc := errgroup.WithContext(c)
 	g.Go(func() (err error) {
 		assignee, err = u.managerRepo.GetById(gc, *order.Assignee)
+
+		if assignee == nil {
+			od.DueDate = order.DueDate
+			od.OrderId = orderId
+			od.OrderState = order.State
+			od.OrderStateContent = state.Content
+			od.OrderedAt = order.OrderedAt
+			od.RemainingEditCount = uint8(order.EditTotal - order.EditCount)
+		}
 		return
 	})
 	g.Go(func() (err error) {

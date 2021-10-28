@@ -243,14 +243,19 @@ func (c *OrderController) getOrderDetailInfo(ctx echo.Context) error {
 
 	res, err := c.useCase.GetOrderDetailInfo(ctx.Request().Context(), req.OrderId)
 
-	return ctx.JSON(http.StatusOK, OrderDetailInfoResponse{
-		OrderedAt: res.OrderedAt,
-		DueDate:   res.DueDate,
-		Assignee: &orderDetailAssigneeInfoResponse{
+	var assignee *orderDetailAssigneeInfoResponse
+	if res.AssigneeInfo != nil {
+		assignee = &orderDetailAssigneeInfoResponse{
 			Id:       res.AssigneeInfo.Id,
 			Name:     res.AssigneeInfo.Name,
 			Nickname: res.AssigneeInfo.Nickname,
-		},
+		}
+	}
+
+	return ctx.JSON(http.StatusOK, OrderDetailInfoResponse{
+		OrderedAt:          res.OrderedAt,
+		DueDate:            res.DueDate,
+		Assignee:           assignee,
 		OrderState:         res.OrderState,
 		OrderStateContent:  res.OrderStateContent,
 		RemainingEditCount: uint16(res.RemainingEditCount),
