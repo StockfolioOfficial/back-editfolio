@@ -191,29 +191,15 @@ func (u *ucase) MyOrderDone(ctx context.Context, ud domain.OrderDone) (err error
 		return
 	}
 
-	if user.Role != domain.CustomerUserRole {
-		err = domain.ErrUserNotCustomer
+	if domain.ExistsCustomer(user) {
+		err = domain.ErrNoPermission
 		return
-	}
-
-	if user.Customer.OrderableCount > 0 {
-		user.Customer.OrderableCount -= 1
 	}
 
 	order, err := u.orderRepo.GetRecentByOrdererId(c, ud.UserId)
 	order.Done()
 
-	err = u.userRepo.Transaction(c, func(ur domain.UserTxRepository) error {
-		or := u.orderRepo.With(ur)
-		g, gc := errgroup.WithContext(c)
-		g.Go(func() error {
-			return ur.Save(gc, user)
-		})
-		g.Go(func() error {
-			return or.Save(gc, order)
-		})
-		return g.Wait()
-	})
+	err = u.orderRepo.Save(c, order)
 
 	return
 }

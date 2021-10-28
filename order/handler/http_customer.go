@@ -100,12 +100,11 @@ type DoneOrderResponse struct {
 // @Success 200 {object} DoneOrderResponse true "의뢰 완료 요청 성공"
 // @Router /order/recent-processing/done [post]
 func (c *OrderController) myOrderDone(ctx echo.Context, userId uuid.UUID) error {
-	//TODO 채우세요
 	var req DoneOrderResponse
 
 	err := ctx.Bind(&req)
 	if err != nil {
-		log.WithError(err).Trace(tag, "done order response, request body bind error")
+		log.WithError(err).Trace(tag, "done order request, request body bind error")
 		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
 			Message: err.Error(),
 		})
