@@ -87,9 +87,9 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 	managerIds := make([]uuid.UUID, 0, bufSize)
 	customerIds := make([]uuid.UUID, 0, bufSize)
 
-	stateDst := make(map[uint8]*domain.OrderInfo)
-	managerDst := make(map[uuid.UUID]*domain.OrderInfo)
-	customerDst := make(map[uuid.UUID]*domain.OrderInfo)
+	stateDst := make(map[uint8][]*domain.OrderInfo)
+	managerDst := make(map[uuid.UUID][]*domain.OrderInfo)
+	customerDst := make(map[uuid.UUID][]*domain.OrderInfo)
 	for i := range list {
 		src := list[i]
 		res[i] = domain.OrderInfo{
@@ -100,14 +100,14 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 
 		dst := &res[i]
 
-		stateDst[src.State] = dst
+		stateDst[src.State] = append(stateDst[src.State], dst)
 		statesIds = append(statesIds, src.State)
 
-		managerDst[src.Orderer] = dst
+		customerDst[src.Orderer] = append(customerDst[src.Orderer], dst)
 		customerIds = append(customerIds, src.Orderer)
 
 		if src.Assignee != nil {
-			customerDst[*src.Assignee] = dst
+			managerDst[*src.Assignee] = append(managerDst[*src.Assignee], dst)
 			managerIds = append(managerIds, *src.Assignee)
 		}
 	}
@@ -121,13 +121,16 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 
 		for i := range mList {
 			src := mList[i]
-			dst, ok := managerDst[src.Id]
-			if !ok {
+			dsts := managerDst[src.Id]
+			if len(dsts) == 0 {
 				continue
 			}
 
-			dst.AssigneeName = &src.Name
-			dst.AssigneeNickname = &src.Nickname
+			for i := range dsts {
+				dst := dsts[i]
+				dst.AssigneeName = &src.Name
+				dst.AssigneeNickname = &src.Nickname
+			}
 		}
 
 		return nil
@@ -141,14 +144,17 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 
 		for i := range cList {
 			src := cList[i]
-			dst, ok := customerDst[src.Id]
-			if !ok {
+			dsts := customerDst[src.Id]
+			if len(dsts) == 0 {
 				continue
 			}
 
-			dst.OrdererName = src.Name
-			dst.OrdererChannelName = src.ChannelName
-			dst.OrdererChannelLink = src.ChannelLink
+			for i := range dsts {
+				dst := dsts[i]
+				dst.OrdererName = src.Name
+				dst.OrdererChannelName = src.ChannelName
+				dst.OrdererChannelLink = src.ChannelLink
+			}
 		}
 
 		return nil
@@ -161,13 +167,16 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 
 		for i := range sList {
 			src := sList[i]
-			dst, ok := stateDst[src.Id]
-			if !ok {
+			dsts := stateDst[src.Id]
+			if len(dsts) == 0 {
 				continue
 			}
 
-			dst.OrderState = src.Id
-			dst.OrderStateContent = src.Content
+			for i := range dsts {
+				dst := dsts[i]
+				dst.OrderState = src.Id
+				dst.OrderStateContent = src.Content
+			}
 		}
 
 		return nil

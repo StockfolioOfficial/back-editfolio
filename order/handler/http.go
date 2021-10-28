@@ -38,8 +38,8 @@ func (c *OrderController) Bind(e *echo.Echo) {
 		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole)) // 대기
 
 	// v1 - fetch, todo refactor
-	e.GET("/order/ready", c.fetchOrderToReady)
-		//debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
+	e.GET("/order/ready", c.fetchOrderToReady,
+		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
 	e.GET("/order/processing", echox.UserID(c.fetchOrderToProcessing),
 		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
 	e.GET("/order/done", c.fetchOrderToDone,

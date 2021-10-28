@@ -37,8 +37,8 @@ type OrderReadyInfoListResponse []OrderReadyInfoResponse
 // @Success 200 {object} OrderReadyInfoListResponse true "의뢰 요청 목록"
 // @Router /order/ready [get]
 func (c *OrderController) fetchOrderToReady(ctx echo.Context) error {
-	res, alreadyResp, err := c.internalFetchOrder(ctx, domain.OrderGeneralStateDone, nil)
-	if !alreadyResp {
+	res, alreadyResp, err := c.internalFetchOrder(ctx, domain.OrderGeneralStateReady, nil)
+	if alreadyResp {
 		return err
 	}
 
@@ -86,7 +86,7 @@ type OrderProcessingInfoListResponse []OrderProcessingInfoResponse
 // @Router /order/processing [get]
 func (c *OrderController) fetchOrderToProcessing(ctx echo.Context, userId uuid.UUID) error {
 	res, alreadyResp, err := c.internalFetchOrder(ctx, domain.OrderGeneralStateProcessing, &userId)
-	if !alreadyResp {
+	if alreadyResp {
 		return err
 	}
 
@@ -143,7 +143,7 @@ type OrderDoneInfoListResponse []OrderDoneInfoResponse
 // @Router /order/done [get]
 func (c *OrderController) fetchOrderToDone(ctx echo.Context) error {
 	res, alreadyResp, err := c.internalFetchOrder(ctx, domain.OrderGeneralStateDone, nil)
-	if !alreadyResp {
+	if alreadyResp {
 		return err
 	}
 
