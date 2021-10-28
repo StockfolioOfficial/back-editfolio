@@ -50,6 +50,10 @@ func (c *UserController) Bind(e *echo.Echo) {
 	// Create customer
 	e.POST("/customer", c.createCustomer,
 		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
+	// Get Customer
+	e.GET("/customer/:userId", c.getCustomerDetailInfo,
+		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
+
 	// Update customer
 	e.PUT("/customer/:userId", c.updateCustomer,
 		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
