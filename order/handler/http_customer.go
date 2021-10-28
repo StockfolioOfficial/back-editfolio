@@ -96,7 +96,6 @@ type DoneOrderResponse struct {
 // @Summary [고객] 진행중인 편집 의뢰 완료
 // @Description 고객이 진행중인 편집 의뢰 완료 기능, 역할(role)이 'CUSTOMER' 이여야함
 // @Accept json
-// @Param user_id path string true "user id"
 // @Success 200 {object} DoneOrderResponse true "의뢰 완료 요청 성공"
 // @Router /order/recent-processing/done [post]
 func (c *OrderController) myOrderDone(ctx echo.Context, userId uuid.UUID) error {
