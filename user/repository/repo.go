@@ -24,8 +24,9 @@ type repo struct {
 func (r *repo) FetchAllAdmin(ctx context.Context, option domain.FetchAdminOption) (list []domain.User, err error) {
 	err = r.db.WithContext(ctx).
 		Joins("Manager").
-		Where("`role` = ?", domain.AdminUserRole).
-		Or("`role` = ?", domain.SuperAdminUserRole).
+		Where("`deleted_at` IS NULL").
+		Where(r.db.Where("`role` = ?", domain.AdminUserRole).
+			Or("`role` = ?", domain.SuperAdminUserRole)).
 		Find(&list).Error
 	return
 }
@@ -33,8 +34,24 @@ func (r *repo) FetchAllAdmin(ctx context.Context, option domain.FetchAdminOption
 func (r *repo) FetchAllCustomer(ctx context.Context, option domain.FetchCustomerOption) (list []domain.User, err error) {
 	err = r.db.WithContext(ctx).
 		Joins("Customer").
+		Where("`deleted_at` IS NULL").
 		Where("`role` = ?", domain.CustomerUserRole).
 		Find(&list).Error
+	return
+}
+
+func (r *repo) GetByIdWithCustomer(ctx context.Context, id uuid.UUID) (user *domain.User, err error) {
+	var entity domain.User
+	err = r.db.WithContext(ctx).
+		Joins("Customer").
+		Where("`deleted_at` IS NULL").
+		First(&entity, id).Error
+	if err == nil {
+		user = &entity
+	} else if err == gorm.ErrRecordNotFound {
+		err = nil
+	}
+
 	return
 }
 
@@ -43,24 +60,24 @@ func (r *repo) GetByUsername(ctx context.Context, username string) (user *domain
 	err = r.db.WithContext(ctx).
 		Where("`username` = ?", username).
 		First(&entity).Error
-	if err == gorm.ErrRecordNotFound {
+	if err == nil {
+		user = &entity
+	} else if err == gorm.ErrRecordNotFound {
 		err = nil
-		return
 	}
 
-	user = &entity
 	return
 }
 
 func (r *repo) GetById(ctx context.Context, userId uuid.UUID) (user *domain.User, err error) {
 	var entity domain.User
 	err = r.db.WithContext(ctx).First(&entity, userId).Error
-	if err == gorm.ErrRecordNotFound {
+	if err == nil {
+		user = &entity
+	} else if err == gorm.ErrRecordNotFound {
 		err = nil
-		return
 	}
 
-	user = &entity
 	return
 }
 

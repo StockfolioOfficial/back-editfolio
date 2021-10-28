@@ -171,6 +171,8 @@ type UserRepository interface {
 
 	FetchAllAdmin(ctx context.Context, option FetchAdminOption) ([]User, error)
 	FetchAllCustomer(ctx context.Context, option FetchCustomerOption) ([]User, error)
+
+	GetByIdWithCustomer(ctx context.Context, id uuid.UUID) (*User, error)
 }
 
 type UserTxRepository interface {
@@ -255,6 +257,23 @@ type CustomerInfoData struct {
 	CreatedAt   time.Time
 }
 
+type CustomerInfoDetail struct {
+	UserId         uuid.UUID
+	Name           string
+	ChannelName    string
+	ChannelLink    string
+	Email          string
+	Mobile         string
+	OrderableCount uint32
+	PersonaLink    string
+	OnedriveLink   string
+	Memo           string
+	SubscribeStart *time.Time
+	SubscribeEnd   *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
 type UserUseCase interface {
 	CreateCustomerUser(ctx context.Context, cu CreateCustomerUser) (uuid.UUID, error)
 	UpdateCustomerUser(ctx context.Context, cu UpdateCustomerUser) error
@@ -268,6 +287,8 @@ type UserUseCase interface {
 
 	FetchAllAdmin(ctx context.Context, option FetchAdminOption) ([]AdminInfoData, error)
 	FetchAllCustomer(ctx context.Context, option FetchCustomerOption) ([]CustomerInfoData, error)
+
+	GetCustomerInfoDetailByUserId(ctx context.Context, userId uuid.UUID) (CustomerInfoDetail, error)
 }
 
 type TokenGenerateAdapter interface {
