@@ -97,11 +97,12 @@ type OrderInfo struct {
 type OrderUseCase interface {
 	RequestOrder(ctx context.Context, or RequestOrder) (uuid.UUID, error)
 	Fetch(ctx context.Context, option FetchOrderOption) (res []OrderInfo, err error)
+	GetRecentProcessingOrder(ctx context.Context, userId uuid.UUID) (ro RecentOrderInfo, err error)
 }
 
 type RecentOrderInfo struct {
 	AssigneeNickname   *string
-	DoneAt             *time.Time
+	DueDate            *time.Time
 	OrderId            uuid.UUID
 	OrderState         uint8
 	OrderStateContent  string

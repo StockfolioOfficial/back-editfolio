@@ -190,5 +190,16 @@ func (u *ucase) GetRecentProcessingOrder(ctx context.Context, userId uuid.UUID) 
 		return
 	}
 
+	assignee, err := u.managerRepo.GetById(c, *order.Assignee)
+	state, err := u.orderStateRepo.GetById(c, order.State)
+
+	ro.AssigneeNickname = &assignee.Nickname
+	ro.DueDate = order.DueDate
+	ro.OrderId = order.Id
+	ro.OrderState = order.State
+	ro.OrderStateContent = state.Content
+	ro.OrderedAt = order.OrderedAt
+	ro.RemainingEditCount = uint8(order.EditCount)
+
 	return
 }

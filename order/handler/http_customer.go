@@ -1,13 +1,13 @@
 package handler
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/stockfolioofficial/back-editfolio/domain"
-	"github.com/stockfolioofficial/back-editfolio/util/pointer"
-	"net/http"
-	"time"
 )
 
 type CreateOrderRequest struct {
@@ -75,14 +75,20 @@ type RecentOrderInfoResponse struct {
 // @Success 200 {object} RecentOrderInfoResponse true "의뢰 정보 가져오기 완료"
 // @Router /order/recent-processing [get]
 func (c *OrderController) getRecentProcessingOrder(ctx echo.Context, userId uuid.UUID) error {
-	//TODO 채우세요
+
+	res, err := c.useCase.GetRecentProcessingOrder(ctx.Request().Context(), userId)
+
+	if err != nil {
+		return domain.ErrItemNotFound
+	}
+
 	return ctx.JSON(http.StatusOK, RecentOrderInfoResponse{
-		OrderedAt:          time.Now(),
-		DueDate:            pointer.Time(time.Now().Add(time.Hour * 24 * 3)),
-		AssigneeNickname:   pointer.String("담당 편집자 닉네임"),
-		OrderState:         3,
-		OrderStateContent:  "이펙트 추가 중",
-		RemainingEditCount: 2,
+		OrderedAt:          res.OrderedAt,
+		DueDate:            res.DueDate,
+		AssigneeNickname:   res.AssigneeNickname,
+		OrderState:         res.OrderState,
+		OrderStateContent:  res.OrderStateContent,
+		RemainingEditCount: uint16(res.RemainingEditCount),
 	})
 }
 
