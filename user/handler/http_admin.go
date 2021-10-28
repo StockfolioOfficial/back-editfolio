@@ -451,3 +451,57 @@ func (c *UserController) fetchAdmin(ctx echo.Context) error {
 
 	return ctx.JSON(http.StatusOK, res)
 }
+
+type AdminCreatorInfoResponse struct {
+	UserId   uuid.UUID `json:"userId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Name     string    `json:"name" validate:"required" example:"(대충 편집자 이름)"`
+	Nickname string    `json:"nickname" validate:"required" example:"(대충 편집자 닉네임)"`
+}
+
+type AdminCreatorInfoListResponse []AdminCreatorInfoResponse
+
+// @Tags (User) 어드민 기능
+// @Security Auth-Jwt-Bearer
+// @Summary [어드민] 편집자 목록
+// @Description 편집자 목록 가져오는 기능, 역할(role)이 'ADMIN', 'SUPER_ADMIN' 이여야함
+// @Accept json
+// @Produce json
+// @Param q query string false "검색어"
+// @Success 200 {object} AdminCreatorInfoListResponse "성공"
+// @Router /admin/creator [get]
+func (c *UserController) fetchAdminCreator(ctx echo.Context) error {
+	var req FetchAdminRequest
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "fetch full admin, request data bind error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	list, err := c.useCase.FetchAllAdmin(ctx.Request().Context(), domain.FetchAdminOption{
+		Query: req.Query,
+	})
+
+	if err != nil {
+		log.WithError(err).Error(tag, "fetch full customer, unhandled error useCase.FetchAllCustomer")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+
+	if len(list) == 0 {
+		return ctx.NoContent(http.StatusNoContent)
+	}
+
+	res := make(AdminCreatorInfoListResponse, len(list))
+
+	for i := range list {
+		src := list[i]
+		res[i] = AdminCreatorInfoResponse{
+			UserId:    src.UserId,
+			Name:      src.Name,
+			Nickname:  src.Nickname,
+		}
+	}
+
+	return ctx.JSON(http.StatusOK, res)
+}
