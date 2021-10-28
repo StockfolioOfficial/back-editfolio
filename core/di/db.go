@@ -34,7 +34,7 @@ func NewDatabase() (db *gorm.DB) {
 		panic(err)
 	}
 
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(10)
+	sqlDB.SetMaxIdleConns(15)
+	sqlDB.SetMaxOpenConns(15)
 	return
 }

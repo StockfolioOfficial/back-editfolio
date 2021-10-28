@@ -24,4 +24,5 @@ type Product struct {
 	SubscribeTermUnitPart   SubscribeTermUnit `gorm:"type:char(3);index;not null"`
 	OrderCount              uint8             `gorm:"not null"`
 	EditCount               uint8             `gorm:"not null"`
+	ExternalOriginId        uint64            `gorm:"type:not null;index"`
 }

@@ -34,6 +34,10 @@ func (c *UserController) Bind(e *echo.Echo) {
 	// v1, todo refactor
 	e.GET("/admin", c.fetchAdmin,
 		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
+	// v1, todo refactor
+	e.GET("/admin/creator", c.fetchAdminCreator,
+		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
+
 	// Self control
 	// Update my info
 	e.PUT("/admin/me", echox.UserID(c.updateAdminMyInfo), debug.JwtBypassOnDebug())

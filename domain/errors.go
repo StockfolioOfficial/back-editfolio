@@ -17,6 +17,8 @@ var (
 
 	ErrItemAlreadyExist = errors.New("item already exsits")
 
+	ErrWeirdData = errors.New("request weird data")
+
 	InvalidateTokenResponse = ErrorResponse{
 		ErrorCode: pointer.String("A-1"),
 		Message:   "unauthorized",
