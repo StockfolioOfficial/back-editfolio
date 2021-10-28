@@ -41,15 +41,19 @@ func (r *repo) Fetch(ctx context.Context, option domain.FetchOrderOption) (list 
 
 	switch option.OrderState {
 	case domain.OrderGeneralStateReady:
-		db = db.Where("`assignee` IS NULL AND `done_at` IS NULL")
+		db = db.Order("`ordered_at` asc").
+			Where("`assignee` IS NULL AND `done_at` IS NULL")
 	case domain.OrderGeneralStateProcessing:
+		db = db.Order("`ordered_at` asc")
 		if option.Assignee == nil {
 			db = db.Where("`assignee` IS NOT NULL AND `done_at` IS NULL")
 		} else {
 			db = db.Where("`assignee` = ? AND `done_at` IS NULL", option.Assignee)
 		}
 	case domain.OrderGeneralStateDone:
-		db = db.Where("`done_at` IS NOT NULL")
+
+		db = db.Order("`ordered_at` desc").
+			Where("`done_at` IS NOT NULL")
 	}
 
 	//TODO
