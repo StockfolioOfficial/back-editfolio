@@ -201,7 +201,7 @@ func (u *ucase) UpdateOrderDetailInfo(ctx context.Context, uo *domain.UpdateOrde
 	)
 
 	g, gc := errgroup.WithContext(c)
-	g.Go(func() error {
+	g.Go(func() (err error) {
 		oExists, err = u.orderRepo.GetById(gc, uo.OrderId)
 
 		if err != nil {
@@ -210,15 +210,11 @@ func (u *ucase) UpdateOrderDetailInfo(ctx context.Context, uo *domain.UpdateOrde
 
 		if oExists == nil {
 			err = domain.ErrItemNotFound
-			return err
 		}
-
-		oExists.DueDate = &uo.DueDate
-
-		return nil
+		return
 	})
 
-	g.Go(func() error {
+	g.Go(func() (err error) {
 		aExists, err = u.managerRepo.GetById(gc, uo.Assignee)
 
 		if err != nil {
@@ -226,16 +222,12 @@ func (u *ucase) UpdateOrderDetailInfo(ctx context.Context, uo *domain.UpdateOrde
 		}
 
 		if aExists == nil {
-			err = domain.ErrItemNotFound
-			return err
+			err = domain.ErrItemNotFound // todo bad request 로 에러 핸들링 해주세요
 		}
-
-		oExists.Assignee = &uo.Assignee
-
-		return nil
+		return
 	})
 
-	g.Go(func() error {
+	g.Go(func() (err error) {
 		sExists, err = u.orderStateRepo.GetById(gc, uo.OrderState)
 
 		if err != nil {
@@ -243,16 +235,13 @@ func (u *ucase) UpdateOrderDetailInfo(ctx context.Context, uo *domain.UpdateOrde
 		}
 
 		if sExists == nil {
-			err = domain.ErrItemNotFound
-			return err
+			err = domain.ErrItemNotFound // todo bad request 로 에러 핸들링 해주세요
 		}
-
-		oExists.State = uo.OrderState
-
-		return nil
+		return 
 	})
 
 	err = g.Wait()
+	// 데이터 업데이트
 
 	return u.orderRepo.Save(c, oExists)
 
