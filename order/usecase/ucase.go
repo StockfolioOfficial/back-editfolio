@@ -185,13 +185,27 @@ func (u *ucase) GetRecentProcessingOrder(ctx context.Context, userId uuid.UUID) 
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
-	order, err := u.orderRepo.GetRecentByOrdererId(c, userId)
+	var order *domain.Order
+	var assignee *domain.Manager
+	var state *domain.OrderState
+
+	g, gc := errgroup.WithContext(c)
+	g.Go(func() (err error) {
+		order, err = u.orderRepo.GetRecentByOrdererId(gc, userId)
+		return
+	})
+	g.Go(func() (err error) {
+		assignee, err = u.managerRepo.GetById(gc, *order.Assignee)
+		return
+	})
+	g.Go(func() (err error) {
+		state, err = u.orderStateRepo.GetById(gc, order.State)
+		return
+	})
+	err = g.Wait()
 	if err != nil {
 		return
 	}
-
-	assignee, err := u.managerRepo.GetById(c, *order.Assignee)
-	state, err := u.orderStateRepo.GetById(c, order.State)
 
 	ro.AssigneeNickname = &assignee.Nickname
 	ro.DueDate = order.DueDate
