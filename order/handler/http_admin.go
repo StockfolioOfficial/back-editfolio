@@ -284,9 +284,9 @@ func (c *OrderController) updateOrderDetailInfo(ctx echo.Context) error {
 	case nil:
 		return ctx.NoContent(http.StatusNoContent)
 	case domain.ErrItemNotFound:
-		return ctx.JSON(http.StatusNotFound, domain.ErrItemNotFound)
+		return ctx.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
 	case domain.ErrWeirdData:
-		return ctx.JSON(http.StatusBadRequest, domain.ErrWeirdData)
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
 	default:
 		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
 	}
