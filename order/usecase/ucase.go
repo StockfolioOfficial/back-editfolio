@@ -226,3 +226,42 @@ func (u *ucase) GetRecentProcessingOrder(ctx context.Context, userId uuid.UUID) 
 
 	return
 }
+
+func (u *ucase) GetOrderDetailInfo(ctx context.Context, orderId uuid.UUID) (od domain.OrderDetailInfo, err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	var order *domain.Order
+	var assignee *domain.Manager
+	var state *domain.OrderState
+
+	g, gc := errgroup.WithContext(c)
+	g.Go(func() (err error) {
+		order, err = u.orderRepo.GetById(gc, orderId)
+		return
+	})
+	g.Go(func() (err error) {
+		assignee, err = u.managerRepo.GetById(gc, *order.Assignee)
+		return
+	})
+	g.Go(func() (err error) {
+		state, err = u.orderStateRepo.GetById(gc, order.State)
+		return
+	})
+	err = g.Wait()
+	if err != nil {
+		return
+	}
+
+	od.Assignee = assignee.Id
+	od.AssigneeName = &assignee.Name
+	od.AssigneeNickname = &assignee.Nickname
+	od.DueDate = order.DueDate
+	od.OrderId = orderId
+	od.OrderState = order.State
+	od.OrderStateContent = state.Content
+	od.OrderedAt = order.OrderedAt
+	od.RemainingEditCount = uint8(order.EditTotal - order.EditCount)
+
+	return
+}
