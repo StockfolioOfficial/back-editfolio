@@ -231,15 +231,15 @@ func (u *ucase) GetOrderDetailInfo(ctx context.Context, orderId uuid.UUID) (od d
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
-	var order *domain.Order
+	order, err := u.orderRepo.GetById(c, orderId)
+	if err != nil {
+		return
+	}
+
 	var assignee *domain.Manager
 	var state *domain.OrderState
 
 	g, gc := errgroup.WithContext(c)
-	g.Go(func() (err error) {
-		order, err = u.orderRepo.GetById(gc, orderId)
-		return
-	})
 	g.Go(func() (err error) {
 		assignee, err = u.managerRepo.GetById(gc, *order.Assignee)
 		return
@@ -253,9 +253,9 @@ func (u *ucase) GetOrderDetailInfo(ctx context.Context, orderId uuid.UUID) (od d
 		return
 	}
 
-	od.Assignee = assignee.Id
-	od.AssigneeName = &assignee.Name
-	od.AssigneeNickname = &assignee.Nickname
+	od.AssigneeInfo.Id = assignee.Id
+	od.AssigneeInfo.Name = assignee.Name
+	od.AssigneeInfo.Nickname = assignee.Nickname
 	od.DueDate = order.DueDate
 	od.OrderId = orderId
 	od.OrderState = order.State

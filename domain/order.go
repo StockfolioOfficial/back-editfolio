@@ -111,10 +111,14 @@ type RecentOrderInfo struct {
 	RemainingEditCount uint8
 }
 
+type AssigneeInfo struct {
+	Id       uuid.UUID
+	Name     string
+	Nickname string
+}
+
 type OrderDetailInfo struct {
-	Assignee           uuid.UUID
-	AssigneeName       *string
-	AssigneeNickname   *string
+	AssigneeInfo       *AssigneeInfo
 	DueDate            *time.Time
 	OrderId            uuid.UUID
 	OrderState         uint8

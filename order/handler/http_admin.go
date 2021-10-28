@@ -247,9 +247,9 @@ func (c *OrderController) getOrderDetailInfo(ctx echo.Context) error {
 		OrderedAt: res.OrderedAt,
 		DueDate:   res.DueDate,
 		Assignee: &orderDetailAssigneeInfoResponse{
-			Id:       res.Assignee,
-			Name:     *res.AssigneeName,
-			Nickname: *res.AssigneeNickname,
+			Id:       res.AssigneeInfo.Id,
+			Name:     res.AssigneeInfo.Name,
+			Nickname: res.AssigneeInfo.Nickname,
 		},
 		OrderState:         res.OrderState,
 		OrderStateContent:  res.OrderStateContent,
