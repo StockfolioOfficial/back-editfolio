@@ -357,7 +357,7 @@ type CustomerDetailInfoResponse struct {
 // @Router /customer/{user_id} [get]
 func (c *UserController) getCustomerDetailInfo(ctx echo.Context) error {
 	var req struct {
-		UserId uuid.UUID `json:"-" param:"customerId"`
+		UserId uuid.UUID `json:"-" param:"userId"`
 	}
 	err := ctx.Bind(&req)
 	if err != nil {
