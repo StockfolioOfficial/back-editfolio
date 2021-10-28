@@ -181,7 +181,7 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 	return
 }
 
-func (u *ucase) MyOrderDone(ctx context.Context, ud domain.OrderDone) (err error) {
+func (u *ucase) MyOrderDone(ctx context.Context, ud domain.OrderDone) (orderId uuid.UUID, err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 

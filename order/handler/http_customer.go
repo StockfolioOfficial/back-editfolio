@@ -111,6 +111,7 @@ func (c *OrderController) myOrderDone(ctx echo.Context, userId uuid.UUID) error 
 	case domain.ErrUserNotCustomer:
 		return ctx.JSON(http.StatusBadRequest, domain.ErrUserNotCustomer)
 	default:
-		return ctx.JSON(http.StatusOK, DoneOrderResponse{Id: uuid.New()})
+		log.WithError(err).Error(tag, "order done requirement failed")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
 	}
 }
