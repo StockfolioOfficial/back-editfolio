@@ -26,12 +26,12 @@ func (r *repo) FetchByIds(ctx context.Context, ids []uuid.UUID) (list []domain.M
 func (r *repo) GetById(ctx context.Context, userId uuid.UUID) (manager *domain.Manager, err error) {
 	var entity domain.Manager
 	err = r.db.WithContext(ctx).First(&entity, userId).Error
-	if err == gorm.ErrRecordNotFound {
+	if err == nil {
+		manager = &entity
+	} else if err == gorm.ErrRecordNotFound {
 		err = nil
-		return
 	}
-
-	manager = &entity
+	
 	return
 }
 
