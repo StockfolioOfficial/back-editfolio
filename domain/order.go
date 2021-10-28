@@ -94,7 +94,7 @@ type OrderInfo struct {
 type OrderUseCase interface {
 	RequestOrder(ctx context.Context, or RequestOrder) (uuid.UUID, error)
 	Fetch(ctx context.Context, option FetchOrderOption) (res []OrderInfo, err error)
-	MyOrderDone(ctx context.Context, ud OrderDone) (err error)
+	MyOrderDone(ctx context.Context, ud OrderDone) (orderId uuid.UUID, err error)
 }
 
 type OrderDone struct {
