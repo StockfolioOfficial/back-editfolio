@@ -21,8 +21,6 @@ type OrderReadyInfoResponse struct {
 	OrdererName        string    `json:"ordererName" validate:"required"`
 	OrdererChannelName string    `json:"ordererChannelName" validate:"required"`
 	OrdererChannelLink string    `json:"ordererChannelLink" validate:"required"`
-	OrderState         uint8     `json:"orderState" validate:"required"`
-	OrderStateContent  string    `json:"orderStateContent" validate:"required"`
 } // @name OrderReadyInfoResponse
 
 type OrderReadyInfoListResponse []OrderReadyInfoResponse
@@ -52,8 +50,6 @@ func (c *OrderController) fetchOrderToReady(ctx echo.Context) error {
 			OrdererName:        src.OrdererName,
 			OrdererChannelName: src.OrdererChannelName,
 			OrdererChannelLink: src.OrdererChannelLink,
-			OrderState:         src.OrderState,
-			OrderStateContent:  src.OrderStateContent,
 		}
 	}
 

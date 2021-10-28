@@ -62,7 +62,7 @@ func (c *UserController) getCustomerMyInfoSimply(ctx echo.Context, userId uuid.U
 		detail.SubscribeEnd != nil &&
 		now.After(*detail.SubscribeEnd) {
 		res.SimpleNotify = CustomerSimpleNotifyNeedBuySubscribe
-	} else {
+	} else if detail.SubscribeStart == nil || detail.SubscribeEnd == nil {
 		log.WithField("detail", detail).Error("의도 하지 않는 구독 일자")
 		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
 	}
