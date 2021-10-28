@@ -31,7 +31,7 @@ func (r *repo) GetById(ctx context.Context, userId uuid.UUID) (manager *domain.M
 	} else if err == gorm.ErrRecordNotFound {
 		err = nil
 	}
-
+	
 	return
 }
 

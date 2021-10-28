@@ -190,6 +190,65 @@ func (u *ucase) Fetch(ctx context.Context, option domain.FetchOrderOption) (res 
 	return
 }
 
+func (u *ucase) UpdateOrderDetailInfo(ctx context.Context, uo *domain.UpdateOrderInfo) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	var (
+		oExists *domain.Order
+		aExists *domain.Manager
+		sExists *domain.OrderState
+	)
+
+	g, gc := errgroup.WithContext(c)
+	g.Go(func() (err error) {
+		oExists, err = u.orderRepo.GetById(gc, uo.OrderId)
+
+		if err != nil {
+			return err
+		}
+
+		if oExists == nil {
+			err = domain.ErrItemNotFound
+		}
+		return
+	})
+
+	g.Go(func() (err error) {
+		aExists, err = u.managerRepo.GetById(gc, uo.Assignee)
+
+		if err != nil {
+			return err
+		}
+
+		if aExists == nil {
+			err = domain.ErrWeirdData
+		}
+		return
+	})
+
+	g.Go(func() (err error) {
+		sExists, err = u.orderStateRepo.GetById(gc, uo.OrderState)
+
+		if err != nil {
+			return err
+		}
+
+		if sExists == nil {
+			err = domain.ErrWeirdData
+		}
+		return
+	})
+
+	err = g.Wait()
+
+	oExists.DueDate = &uo.DueDate
+	oExists.Assignee = &uo.Assignee
+	oExists.State = uo.OrderState
+
+	return u.orderRepo.Save(c, oExists)
+}
+
 func (u *ucase) GetRecentProcessingOrder(ctx context.Context, userId uuid.UUID) (ro domain.RecentOrderInfo, err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
