@@ -58,12 +58,25 @@ func (c *OrderController) createOrder(ctx echo.Context, userId uuid.UUID) error 
 }
 
 type RecentOrderInfoResponse struct {
+	// OrderId 주문 식별아이디 (UUID)
 	OrderId            uuid.UUID  `json:"orderId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+
+	// OrderedAt 주문 일자 (Datetime) RFC3339 datetime format
 	OrderedAt          time.Time  `json:"orderedAt" validate:"required" example:"2021-10-27T04:44:18+00:00"`
+
+	// DueDate 완료 예정일 (Date) RFC3339 datetime format
 	DueDate            *time.Time `json:"dueDate" example:"2021-10-30T00:00:00+00:00"`
+
+	// AssigneeNickname 담당 편집자 이름
 	AssigneeNickname   *string    `json:"assigneeNickname" example:"담당 편집자 닉네임"`
+
+	// OrderState 주문 상태 식별 번호
 	OrderState         uint8      `json:"orderState" validate:"required" example:"3"`
+
+	// OrderStateContent 주문 상태 명
 	OrderStateContent  string     `json:"orderStateContent" validate:"required" example:"이펙트 추가 중"`
+
+	// RemainingEditCount 남은 수정 횟수
 	RemainingEditCount uint8      `json:"remainingEditCount" validate:"required" example:"2"`
 } //@name RecentOrderInfoResponse
 
@@ -89,14 +102,47 @@ func (c *OrderController) getRecentProcessingOrder(ctx echo.Context, userId uuid
 			RemainingEditCount: res.RemainingEditCount,
 		})
 	case domain.ErrItemNotFound:
-		return ctx.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
+		return ctx.NoContent(http.StatusNoContent)
 	default:
 		log.WithError(err).Error(tag, "order done requirement failed")
 		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
 	}
 }
 
+// @Tags (Order) 고객 기능
+// @Security Auth-Jwt-Bearer
+// @Summary [고객] 진행중인 편집 수정 의뢰
+// @Description 고객이 진행중인 편집 수정 의뢰 기능, 역할(role)이 'CUSTOMER' 이여야함
+// @Accept json
+// @Success 202 "수정 요청 성공"
+// @Router /order/recent-processing/edit [post]
+func (c *OrderController) myOrderEdit(ctx echo.Context, userId uuid.UUID) error {
+	err := c.useCase.RequestEditOrder(ctx.Request().Context(), domain.RequestEditOrder{
+		UserId: userId,
+	})
+
+	switch err {
+	case nil:
+		return ctx.NoContent(http.StatusAccepted)
+	case domain.ErrItemNotFound:
+		return ctx.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
+	case domain.ErrWeirdData:
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{Message: "empty remaining edit count"})
+	case domain.ErrItemAlreadyExist:
+		return ctx.JSON(http.StatusConflict, domain.ErrorResponse{Message: "already requested edit"})
+	case domain.ErrNoPermission:
+		return ctx.JSON(http.StatusUnauthorized, domain.NoPermissionResponse)
+	default:
+		log.WithError(err).
+			WithField("in", userId).
+			Error(tag, "myOrderEdit, unhandled error useCase.RequestEditOrder")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+}
+
+
 type DoneOrderResponse struct {
+	// OrderId 주문 식별아이디 (UUID)
 	OrderId uuid.UUID `json:"orderId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 } // @name DoneOrderResponse
 
@@ -116,10 +162,14 @@ func (c *OrderController) myOrderDone(ctx echo.Context, userId uuid.UUID) error 
 	switch err {
 	case nil:
 		return ctx.JSON(http.StatusOK, DoneOrderResponse{OrderId: orderId})
-	case domain.ErrUserNotCustomer:
-		return ctx.JSON(http.StatusBadRequest, domain.ErrUserNotCustomer)
+	case domain.ErrNoPermission:
+		return ctx.JSON(http.StatusUnauthorized, domain.NoPermissionResponse)
+	case domain.ErrItemNotFound:
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{Message: "not exists order"})
 	default:
-		log.WithError(err).Error(tag, "order done requirement failed")
+		log.WithError(err).
+			WithField("in", userId).
+			Error(tag, "myOrderDone, unhandled error useCase.OrderDone")
 		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
 	}
 }

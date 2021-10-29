@@ -18,7 +18,7 @@ func (u *ucase) GetRecentProcessingOrder(ctx context.Context, userId uuid.UUID) 
 		return
 	}
 
-	if order == nil {
+	if order == nil || order.IsDone() {
 		err = domain.ErrItemNotFound
 		return
 	}
