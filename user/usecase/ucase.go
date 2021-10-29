@@ -15,23 +15,26 @@ func NewUserUseCase(
 	tokenAdapter domain.TokenGenerateAdapter,
 	managerRepo domain.ManagerRepository,
 	customerRepo domain.CustomerRepository,
+	orderTicketRepo domain.OrderTicketRepository,
 	timeout time.Duration,
 ) domain.UserUseCase {
 	return &ucase{
-		userRepo:     userRepo,
-		tokenAdapter: tokenAdapter,
-		managerRepo:  managerRepo,
-		customerRepo: customerRepo,
-		timeout:      timeout,
+		userRepo:        userRepo,
+		tokenAdapter:    tokenAdapter,
+		managerRepo:     managerRepo,
+		customerRepo:    customerRepo,
+		orderTicketRepo: orderTicketRepo,
+		timeout:         timeout,
 	}
 }
 
 type ucase struct {
-	userRepo     domain.UserRepository
-	tokenAdapter domain.TokenGenerateAdapter
-	managerRepo  domain.ManagerRepository
-	customerRepo domain.CustomerRepository
-	timeout      time.Duration
+	userRepo        domain.UserRepository
+	tokenAdapter    domain.TokenGenerateAdapter
+	managerRepo     domain.ManagerRepository
+	customerRepo    domain.CustomerRepository
+	orderTicketRepo domain.OrderTicketRepository
+	timeout         time.Duration
 }
 
 func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (token string, err error) {

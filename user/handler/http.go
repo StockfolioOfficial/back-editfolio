@@ -65,7 +65,8 @@ func (c *UserController) Bind(e *echo.Echo) {
 	e.DELETE("/customer/:userId", c.deleteCustomerUser,
 		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
 
-	e.GET("/customer/me.simply", echox.UserID(c.getCustomerMyInfoSimply), debug.JwtBypassOnDebug())
+	e.GET("/customer/me", echox.UserID(c.getMyCustomerInfo),
+		debug.JwtBypassOnDebugWithRole(domain.CustomerUserRole))
 
 	// ===== SUPER_ADMIN =====
 	// Create admin
