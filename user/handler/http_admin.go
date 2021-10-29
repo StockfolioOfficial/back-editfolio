@@ -276,7 +276,7 @@ type CustomerInfoResponse struct {
 	Name        string    `json:"name" validate:"required" example:"(대충 고객 이름)"`
 	ChannelName string    `json:"channelName" validate:"required" example:"(대충 채널 이름)"`
 	ChannelLink string    `json:"channelLink" validate:"required" example:"(대충 채널 url 링크)"`
-	Email       string    `json:"email" validate:"required" example:"example@example.com"`
+	Email       string    `json:"email" validate:"required,email" example:"example@example.com"`
 	Mobile      string    `json:"mobile" validate:"required" example:"01012345678"`
 	CreatedAt   time.Time `json:"createdAt" validate:"required" example:"2021-10-27T04:44:18+00:00"`
 } // @name CustomerInfoResponse

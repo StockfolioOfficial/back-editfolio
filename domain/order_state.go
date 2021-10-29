@@ -31,7 +31,7 @@ type OrderStateRepository interface {
 	FetchFull(ctx context.Context) ([]OrderState, error)
 	FetchByIds(ctx context.Context, ids []uint8) ([]OrderState, error)
 
-	GetByCode(ctx context.Context, code string) (*OrderState, error)
+	GetByCode(ctx context.Context, code OrderStateCode) (*OrderState, error)
 	FetchByParentId(ctx context.Context, parentId uint8) ([]OrderState, error)
 }
 

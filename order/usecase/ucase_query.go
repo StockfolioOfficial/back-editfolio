@@ -88,7 +88,9 @@ func (u *ucase) GetOrderDetailInfo(ctx context.Context, orderId uuid.UUID) (res 
 	res = domain.OrderDetailInfo{
 		OrderId:            order.Id,
 		OrderedAt:          order.OrderedAt,
+		Orderer:            order.Orderer,
 		DueDate:            order.DueDate,
+		AssigneeInfo:       nil,
 		OrderState:         order.State,
 		OrderStateContent:  "알 수 없는 상태", // todo string resource
 		RemainingEditCount: order.RemainingEditCount(),
