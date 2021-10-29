@@ -148,6 +148,7 @@ type RecentOrderInfo struct {
 	AssigneeNickname   *string
 	OrderState         uint8
 	OrderStateContent  string
+	OrderStateEmoji    string
 	RemainingEditCount uint8
 }
 

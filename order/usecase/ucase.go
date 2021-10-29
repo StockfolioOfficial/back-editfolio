@@ -61,7 +61,7 @@ func (u *ucase) RequestOrder(ctx context.Context, in domain.RequestOrder) (newId
 	})
 	g.Go(func() (err error) {
 		exists, _ := u.orderRepo.GetRecentByOrdererId(gc, in.UserId)
-		if exists != nil {
+		if exists != nil && !exists.IsDone() {
 			err = domain.ErrItemAlreadyExist
 		}
 

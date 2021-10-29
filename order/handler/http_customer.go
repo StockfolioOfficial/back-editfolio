@@ -74,7 +74,10 @@ type RecentOrderInfoResponse struct {
 	OrderState         uint8      `json:"orderState" validate:"required" example:"3"`
 
 	// OrderStateContent 주문 상태 명
-	OrderStateContent  string     `json:"orderStateContent" validate:"required" example:"이펙트 추가 중"`
+	OrderStateContent  string     `json:"orderStateContent" validate:"required" example:"아주 환상적인 이펙트를 입히는 중입니다."`
+
+	// OrderStateEmoji 주문 상태 이모지
+	OrderStateEmoji  string     `json:"orderStateEmoji" validate:"required" example:"🎇"`
 
 	// RemainingEditCount 남은 수정 횟수
 	RemainingEditCount uint8      `json:"remainingEditCount" validate:"required" example:"2"`
@@ -99,6 +102,7 @@ func (c *OrderController) getRecentProcessingOrder(ctx echo.Context, userId uuid
 			AssigneeNickname:   res.AssigneeNickname,
 			OrderState:         res.OrderState,
 			OrderStateContent:  res.OrderStateContent,
+			OrderStateEmoji:    res.OrderStateEmoji,
 			RemainingEditCount: res.RemainingEditCount,
 		})
 	case domain.ErrItemNotFound:
