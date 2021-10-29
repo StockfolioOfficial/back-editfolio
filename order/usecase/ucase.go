@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -17,32 +18,35 @@ func NewOrderUseCase(
 	managerRepo domain.ManagerRepository,
 	customerRepo domain.CustomerRepository,
 	orderStateRepo domain.OrderStateRepository,
+	orderTicketRepo domain.OrderTicketRepository,
 	timeout time.Duration,
 ) domain.OrderUseCase {
 	return &ucase{
-		orderRepo:      orderRepo,
-		userRepo:       userRepo,
-		managerRepo:    managerRepo,
-		customerRepo:   customerRepo,
-		orderStateRepo: orderStateRepo,
-		timeout:        timeout,
+		orderRepo:       orderRepo,
+		userRepo:        userRepo,
+		managerRepo:     managerRepo,
+		customerRepo:    customerRepo,
+		orderStateRepo:  orderStateRepo,
+		orderTicketRepo: orderTicketRepo,
+		timeout:         timeout,
 	}
 }
 
 type ucase struct {
-	orderRepo      domain.OrderRepository
-	userRepo       domain.UserRepository
-	managerRepo    domain.ManagerRepository
-	customerRepo   domain.CustomerRepository
-	orderStateRepo domain.OrderStateRepository
-	timeout        time.Duration
+	orderRepo       domain.OrderRepository
+	userRepo        domain.UserRepository
+	managerRepo     domain.ManagerRepository
+	customerRepo    domain.CustomerRepository
+	orderStateRepo  domain.OrderStateRepository
+	orderTicketRepo domain.OrderTicketRepository
+	timeout         time.Duration
 }
 
 func (u *ucase) RequestOrder(ctx context.Context, in domain.RequestOrder) (newId uuid.UUID, err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
-	// todo refactor
+	var defaultState uint8 = 1
 	g, gc := errgroup.WithContext(ctx)
 	g.Go(func() (err error) {
 		exists, err := u.userRepo.GetById(gc, in.UserId)
@@ -63,20 +67,59 @@ func (u *ucase) RequestOrder(ctx context.Context, in domain.RequestOrder) (newId
 
 		return
 	})
+	g.Go(func() error {
+		exists, _ := u.orderStateRepo.GetByCode(gc, domain.OrderStateCodeDefault)
+		if exists != nil {
+			defaultState = exists.Id
+		}
+
+		return nil
+	})
 	err = g.Wait()
 	if err != nil {
 		return
 	}
 
-	var orderOption domain.CreateOrderOption
-	orderOption.Orderer = in.UserId
-	if len(in.Requirement) > 0 {
-		orderOption.Requirement = &in.Requirement
-	}
+	err = u.orderTicketRepo.Transaction(c, func(otr domain.OrderTicketTxRepository) (err error) {
+		orderOption := domain.CreateOrderOption{
+			Orderer:     in.UserId,
+			State:       defaultState,
+		}
+		if len(in.Requirement) > 0 {
+			orderOption.Requirement = &in.Requirement
+		}
 
-	order := domain.CreateOrder(orderOption)
-	err = u.orderRepo.Save(c, &order)
-	newId = order.Id
+		or := u.orderRepo.With(otr)
+
+		ticket, err := otr.GetByOwnerIdBetweenStartAndEnd(c, in.UserId, time.Now())
+		if err != nil {
+			return
+		}
+
+		if ticket == nil || ticket.IsEmptyOrderCount() {
+			return errors.New("no ticket") // todo error handling
+		}
+
+		ticket.UseOrder()
+		orderOption.EditCount = ticket.EditCount
+		order := domain.CreateOrder(orderOption)
+
+		g, gc = errgroup.WithContext(c)
+		g.Go(func() error {
+			return otr.Save(gc, ticket)
+		})
+		g.Go(func() error {
+			return or.Save(gc, &order)
+		})
+		err = g.Wait()
+		if err != nil {
+			return
+		}
+
+		newId = order.Id
+		return
+	})
+
 	return
 }
 

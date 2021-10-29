@@ -12,29 +12,33 @@ import (
 
 type CreateOrderOption struct {
 	Orderer     uuid.UUID
+	EditCount   uint8
+	State       uint8
 	Requirement *string
 }
 
 func CreateOrder(option CreateOrderOption) Order {
 	return Order{
-		Id:          uuid.New(),
-		OrderedAt:   time.Now(),
-		Orderer:     option.Orderer,
-		Requirement: option.Requirement,
+		Id:             uuid.New(),
+		OrderedAt:      time.Now(),
+		Orderer:        option.Orderer,
+		TotalEditCount: option.EditCount,
+		State:          option.State,
+		Requirement:    option.Requirement,
 	}
 }
 
 type Order struct {
-	Id          uuid.UUID  `gorm:"type:char(36);primaryKey"`
-	OrderedAt   time.Time  `gorm:"size:6;index;not null"`
-	Orderer     uuid.UUID  `gorm:"type:char(36);index;not null"`
-	EditCount   uint8      `gorm:"not null"`
-	EditTotal   uint8      `gorm:"not null"`
-	State       uint8      `gorm:"not null"`
-	DueDate     *time.Time `gorm:"type:date"`
-	Assignee    *uuid.UUID `gorm:"type:char(36);index"`
-	Requirement *string    `gorm:"size:2000"`
-	DoneAt      *time.Time `gorm:"size:6;index"`
+	Id             uuid.UUID  `gorm:"type:char(36);primaryKey"`
+	OrderedAt      time.Time  `gorm:"size:6;index;not null"`
+	Orderer        uuid.UUID  `gorm:"type:char(36);index;not null"`
+	EditCount      uint8      `gorm:"not null"`
+	TotalEditCount uint8      `gorm:"not null"`
+	State          uint8      `gorm:"not null"`
+	DueDate        *time.Time `gorm:"type:date"`
+	Assignee       *uuid.UUID `gorm:"type:char(36);index"`
+	Requirement    *string    `gorm:"size:2000"`
+	DoneAt         *time.Time `gorm:"size:6;index"`
 }
 
 func (Order) TableName() string {
@@ -42,7 +46,7 @@ func (Order) TableName() string {
 }
 
 func (o *Order) RemainingEditCount() uint8 {
-	return o.EditTotal - o.EditCount
+	return o.TotalEditCount - o.EditCount
 }
 
 func (o *Order) Done() {
@@ -135,6 +139,7 @@ type OrderAssigneeInfo struct {
 type OrderDetailInfo struct {
 	OrderId            uuid.UUID
 	OrderedAt          time.Time
+	Orderer            uuid.UUID
 	DueDate            *time.Time
 	AssigneeInfo       *OrderAssigneeInfo
 	OrderState         uint8

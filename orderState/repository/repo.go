@@ -63,7 +63,7 @@ type repo struct {
 	db *gorm.DB
 }
 
-func (r *repo) GetByCode(ctx context.Context, code string) (res *domain.OrderState, err error) {
+func (r *repo) GetByCode(ctx context.Context, code domain.OrderStateCode) (res *domain.OrderState, err error) {
 	var entity domain.OrderState
 	err = r.db.WithContext(ctx).First(&entity, "`code` = ?", code).Error
 	if err == nil {
