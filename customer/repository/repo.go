@@ -26,7 +26,6 @@ func (r *repo) FetchByIds(ctx context.Context, ids []uuid.UUID) (list []domain.C
 func (r *repo) GetById(ctx context.Context, userId uuid.UUID) (customer *domain.Customer, err error) {
 	var entity domain.Customer
 	err = r.db.WithContext(ctx).First(&entity, userId).Error
-
 	if err == nil {
 		customer = &entity
 	} else if err == gorm.ErrRecordNotFound {

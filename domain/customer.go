@@ -8,6 +8,22 @@ import (
 	"github.com/stockfolioofficial/back-editfolio/util/gormx"
 )
 
+type CustomerCreateOption struct {
+	User   *User
+	Name   string
+	Email  string
+	Mobile string
+}
+
+func CreateCustomer(option CustomerCreateOption) Customer {
+	return Customer{
+		Id:     option.User.Id,
+		Name:   option.Name,
+		Email:  option.Email,
+		Mobile: option.Mobile,
+	}
+}
+
 type Customer struct {
 	Id             uuid.UUID  `gorm:"type:char(36);primaryKey"`
 	Name           string     `gorm:"size:320;index;not null"`
@@ -27,27 +43,12 @@ func (Customer) TableName() string {
 	return "customer"
 }
 
-type CustomerCreateOption struct {
-	User   *User
-	Name   string
-	Email  string
-	Mobile string
-}
-
-func CreateCustomer(option CustomerCreateOption) Customer {
-	return Customer{
-		Id:     option.User.Id,
-		Name:   option.Name,
-		Email:  option.Email,
-		Mobile: option.Mobile,
-	}
-}
-
 type CustomerRepository interface {
 	Save(ctx context.Context, customer *Customer) error
-	FetchByIds(ctx context.Context, ids []uuid.UUID) ([]Customer, error)
-	GetById(ctx context.Context, userId uuid.UUID) (*Customer, error)
 	With(tx gormx.Tx) CustomerTxRepository
+
+	GetById(ctx context.Context, userId uuid.UUID) (*Customer, error)
+	FetchByIds(ctx context.Context, ids []uuid.UUID) ([]Customer, error)
 }
 
 type CustomerTxRepository interface {

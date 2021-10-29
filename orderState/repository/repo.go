@@ -38,6 +38,18 @@ type repo struct {
 	db *gorm.DB
 }
 
+func (r *repo) GetById(ctx context.Context, id uint8) (res *domain.OrderState, err error) {
+	var entity domain.OrderState
+	err = r.db.WithContext(ctx).Find(&entity, id).Error
+	if err == nil {
+		res = &entity
+	} else if err == gorm.ErrRecordNotFound {
+		err = nil
+	}
+
+	return
+}
+
 func (r *repo) FetchFull(ctx context.Context) (list []domain.OrderState, err error) {
 	err = r.db.WithContext(ctx).
 		Order("`id` asc").
@@ -52,15 +64,4 @@ func (r *repo) FetchByIds(ctx context.Context, ids []uint8) (list []domain.Order
 	return
 }
 
-func (r *repo) GetById(ctx context.Context, id uint8) (res *domain.OrderState, err error) {
-	var entity domain.OrderState
-	err = r.db.WithContext(ctx).Find(&entity, id).Error
-	if err == nil {
-		res = &entity
-	} else if err == gorm.ErrRecordNotFound {
-		err = nil
-	}
-
-	return
-}
 
