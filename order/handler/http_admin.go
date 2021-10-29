@@ -202,7 +202,7 @@ type orderDetailAssigneeInfoResponse struct {
 	Id       uuid.UUID `json:"assignee" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Name     string    `json:"assigneeName" example:"담당 편집자 이름"`
 	Nickname string    `json:"assigneeNickname" example:"담당 편집자 닉네임"`
-}
+} // @name OrderDetailAssigneeInfoResponse
 
 type OrderDetailInfoResponse struct {
 	OrderId            uuid.UUID                        `json:"orderId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
@@ -264,7 +264,7 @@ type UpdateOrderInfoRequest struct {
 	DueDate    time.Time `json:"dueDate" validate:"required" example:"2021-10-30T00:00:00+00:00"`
 	Assignee   uuid.UUID `json:"assignee" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 	OrderState uint8     `json:"orderState" validate:"required" example:"3"`
-}
+} // @name UpdateOrderInfoRequest
 
 // @Tags (Order) 어드민 기능
 // @Security Auth-Jwt-Bearer

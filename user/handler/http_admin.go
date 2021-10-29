@@ -279,7 +279,7 @@ type CustomerInfoResponse struct {
 	Email       string    `json:"email" validate:"required" example:"example@example.com"`
 	Mobile      string    `json:"mobile" validate:"required" example:"01012345678"`
 	CreatedAt   time.Time `json:"createdAt" validate:"required" example:"2021-10-27T04:44:18+00:00"`
-}
+} // @name CustomerInfoResponse
 
 type CustomerInfoListResponse []CustomerInfoResponse
 
@@ -344,7 +344,7 @@ type CustomerDetailInfoResponse struct {
 	PersonaLink  string    `json:"personaLink" validate:"required" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
 	OnedriveLink string    `json:"onedriveLink" validate:"required" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
 	Memo         string    `json:"memo" example:"이사람 까다로움"`
-}
+} // @name CustomerDetailInfoResponse
 
 // @Tags (User) 어드민 기능
 // @Security Auth-Jwt-Bearer
@@ -400,7 +400,7 @@ type AdminInfoResponse struct {
 	Nickname  string    `json:"nickname" validate:"required" example:"(대충 어드민 닉네임)"`
 	Email     string    `json:"email" validate:"required" example:"example@example.com"`
 	CreatedAt time.Time `json:"createdAt" validate:"required" example:"2021-10-27T04:44:18+00:00"`
-}
+} // @name AdminInfoResponse
 
 type AdminInfoListResponse []AdminInfoResponse
 
@@ -456,7 +456,7 @@ type AdminCreatorInfoResponse struct {
 	UserId   uuid.UUID `json:"userId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Name     string    `json:"name" validate:"required" example:"(대충 편집자 이름)"`
 	Nickname string    `json:"nickname" validate:"required" example:"(대충 편집자 닉네임)"`
-}
+} //@name AdminCreatorInfoResponse
 
 type AdminCreatorInfoListResponse []AdminCreatorInfoResponse
 

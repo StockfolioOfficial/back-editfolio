@@ -16,7 +16,6 @@ package main
 // @license.name MIT License
 // @license.url https://en.wikipedia.org/wiki/MIT_License
 
-// @host localhost:8000
 // @BasePath /
 func main() {
 	getApp().Start()
