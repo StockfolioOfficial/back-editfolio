@@ -17,7 +17,7 @@ func NewOrderStateRepository(db *gorm.DB) domain.OrderStateRepository {
 		},
 		{
 			Id:      2,
-			Code:    domain.OrderStateCodeNone,
+			Code:    domain.OrderStateCodeTake,
 			Content: "영상 검토 중",
 		},
 		{

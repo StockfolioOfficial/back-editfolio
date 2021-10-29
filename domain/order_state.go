@@ -7,6 +7,7 @@ type OrderStateCode string
 const (
 	OrderStateCodeNone OrderStateCode = "NONE"
 	OrderStateCodeDefault OrderStateCode = "DEFAULT"
+	OrderStateCodeTake OrderStateCode = "TAKE"
 	OrderStateCodeRequestEdit OrderStateCode = "REQUEST_EDIT"
 	OrderStateCodeEditDone OrderStateCode = "EDIT_DONE"
 	OrderStateCodeDone OrderStateCode = "DONE"

@@ -289,7 +289,7 @@ func (c *OrderController) updateOrderInfo(ctx echo.Context) error {
 		})
 	}
 
-	err = c.useCase.UpdateOrderInfo(ctx.Request().Context(), &domain.UpdateOrderInfo{
+	err = c.useCase.UpdateOrderInfo(ctx.Request().Context(), domain.UpdateOrderInfo{
 		OrderId:    req.OrderId,
 		DueDate:    req.DueDate,
 		Assignee:   req.Assignee,
@@ -304,6 +304,54 @@ func (c *OrderController) updateOrderInfo(ctx echo.Context) error {
 	case domain.ErrWeirdData:
 		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{Message: err.Error()})
 	default:
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+}
+
+type OrderAssignSelfResponse struct {
+	OrderId uuid.UUID `json:"orderId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+}
+
+// @Tags (Order) 어드민 기능
+// @Security Auth-Jwt-Bearer
+// @Summary [어드민] 의뢰 나에게 업무 할당
+// @Description 업무 나에게 할당 하는 기능, 역할(role)이 'ADMIN', 'SUPER_ADMIN' 이여야함
+// @Accept json
+// @Produce json
+// @Param order_id path string true "의뢰 식별 아이디(UUID)"
+// @Success 200 {object} OrderAssignSelfResponse true "수주 완료"
+// @Router /order/{order_id}/assign-self [post]
+func (c *OrderController) orderAssignSelf(ctx echo.Context, userId uuid.UUID) error {
+	var req struct {
+		OrderId uuid.UUID `json:"-" param:"orderId"`
+	}
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "orderAssignSelf data binding error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	var in = domain.OrderAssignSelf{
+		OrderId:  req.OrderId,
+		Assignee: userId,
+	}
+	err = c.useCase.OrderAssignSelf(ctx.Request().Context(), in)
+
+	switch err {
+	case nil:
+		return ctx.JSON(http.StatusOK, OrderAssignSelfResponse{
+			OrderId: req.OrderId,
+		})
+	case domain.ErrItemAlreadyExist:
+		return ctx.JSON(http.StatusConflict, domain.ErrorResponse{Message: "assign conflict"})
+	case domain.ErrNoPermission:
+		return ctx.JSON(http.StatusUnauthorized, domain.NoPermissionResponse)
+	default:
+		log.WithError(err).
+			WithField("in", in).
+			Error(tag, "orderAssignSelf / unhandled error useCase.OrderAssignSelf")
 		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
 	}
 }

@@ -62,9 +62,9 @@ type User struct {
 	Role      UserRole   `gorm:"size:30;index;not null"`
 	Username  string     `gorm:"size:320;unique;not null"`
 	Password  string     `gorm:"size:60;not null"`
-	CreatedAt time.Time  `gorm:"size:6;not null"`
-	UpdatedAt time.Time  `gorm:"size:6;not null"`
-	DeletedAt *time.Time `gorm:"size:6;index"`
+	CreatedAt time.Time  `gorm:"type:datetime(6);not null"`
+	UpdatedAt time.Time  `gorm:"type:datetime(6);not null"`
+	DeletedAt *time.Time `gorm:"type:datetime(6);index"`
 	Customer  *Customer  `gorm:"foreignKey:Id"`
 	Manager   *Manager   `gorm:"foreignKey:Id"`
 	MyJob     []Order    `gorm:"foreignKey:Orderer"`

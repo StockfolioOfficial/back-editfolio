@@ -80,6 +80,7 @@ func (c *OrderController) getRecentProcessingOrder(ctx echo.Context, userId uuid
 	switch err {
 	case nil:
 		return ctx.JSON(http.StatusOK, RecentOrderInfoResponse{
+			OrderId:            res.OrderId,
 			OrderedAt:          res.OrderedAt,
 			DueDate:            res.DueDate,
 			AssigneeNickname:   res.AssigneeNickname,

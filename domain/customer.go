@@ -35,8 +35,8 @@ type Customer struct {
 	PersonaLink    string     `gorm:"size:2048;not null"`
 	OnedriveLink   string     `gorm:"size:2048;not null"`
 	Memo           string     `gorm:"type:text"`
-	SubscribeStart *time.Time `gorm:"size:6"`
-	SubscribeEnd   *time.Time `gorm:"size:6"`
+	SubscribeStart *time.Time `gorm:"type:datetime(6)"`
+	SubscribeEnd   *time.Time `gorm:"type:datetime(6)"`
 }
 
 func (Customer) TableName() string {
