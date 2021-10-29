@@ -8,7 +8,6 @@ import (
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/stockfolioofficial/back-editfolio/domain"
-	"github.com/stockfolioofficial/back-editfolio/util/pointer"
 )
 
 type OrderFetchRequest struct {
@@ -226,19 +225,37 @@ type OrderDetailInfoResponse struct {
 // @Success 200 {object} OrderDetailInfoResponse true "정보 가져오기 완료"
 // @Router /order/{order_id} [get]
 func (c *OrderController) getOrderDetailInfo(ctx echo.Context) error {
-	//TODO 채우세요
+
+	var req struct {
+		OrderId uuid.UUID `json:"-" param:"orderId"`
+	}
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "get order detail info, request data bind error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	res, err := c.useCase.GetOrderDetailInfo(ctx.Request().Context(), req.OrderId)
+
+	var assignee *orderDetailAssigneeInfoResponse
+	if res.AssigneeInfo != nil {
+		assignee = &orderDetailAssigneeInfoResponse{
+			Id:       res.AssigneeInfo.Id,
+			Name:     res.AssigneeInfo.Name,
+			Nickname: res.AssigneeInfo.Nickname,
+		}
+	}
+
 	return ctx.JSON(http.StatusOK, OrderDetailInfoResponse{
-		OrderedAt: time.Now(),
-		DueDate:   pointer.Time(time.Now().Add(time.Hour * 24 * 3)),
-		Assignee: &orderDetailAssigneeInfoResponse{
-			Id:       uuid.New(),
-			Name:     "담당 편집자 이름",
-			Nickname: "담당 편집자 닉네임",
-		},
-		OrderState:         3,
-		OrderStateContent:  "이펙트 추가 중",
-		RemainingEditCount: 2,
-		Requirement:        "요청 사항",
+		OrderedAt:          res.OrderedAt,
+		DueDate:            res.DueDate,
+		Assignee:           assignee,
+		OrderState:         res.OrderState,
+		OrderStateContent:  res.OrderStateContent,
+		RemainingEditCount: uint16(res.RemainingEditCount),
+		Requirement:        *res.Requirement,
 	})
 }
 

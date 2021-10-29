@@ -17,6 +17,7 @@ var (
 
 	ErrItemAlreadyExist = errors.New("item already exsits")
 
+	ErrUserNotCustomer = errors.New("not customer")
 	ErrWeirdData = errors.New("request weird data")
 
 	InvalidateTokenResponse = ErrorResponse{

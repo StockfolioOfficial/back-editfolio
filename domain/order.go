@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stockfolioofficial/back-editfolio/util/gormx"
+	"github.com/stockfolioofficial/back-editfolio/util/pointer"
 )
 
 type Order struct {
@@ -104,8 +105,18 @@ type UpdateOrderInfo struct {
 type OrderUseCase interface {
 	RequestOrder(ctx context.Context, or RequestOrder) (uuid.UUID, error)
 	Fetch(ctx context.Context, option FetchOrderOption) (res []OrderInfo, err error)
-	UpdateOrderDetailInfo(ctx context.Context, uo *UpdateOrderInfo) (err error)
+	MyOrderDone(ctx context.Context, ud OrderDone) (orderId uuid.UUID, err error)
+  UpdateOrderDetailInfo(ctx context.Context, uo *UpdateOrderInfo) (err error)
 	GetRecentProcessingOrder(ctx context.Context, userId uuid.UUID) (ro RecentOrderInfo, err error)
+	GetOrderDetailInfo(ctx context.Context, orderId uuid.UUID) (od OrderDetailInfo, err error)
+}
+
+type OrderDone struct {
+	UserId uuid.UUID
+}
+
+func (u *Order) Done() {
+	u.DoneAt = pointer.Time(time.Now())
 }
 
 type RecentOrderInfo struct {
@@ -116,4 +127,21 @@ type RecentOrderInfo struct {
 	OrderStateContent  string
 	OrderedAt          time.Time
 	RemainingEditCount uint8
+}
+
+type AssigneeInfo struct {
+	Id       uuid.UUID
+	Name     string
+	Nickname string
+}
+
+type OrderDetailInfo struct {
+	AssigneeInfo       *AssigneeInfo
+	DueDate            *time.Time
+	OrderId            uuid.UUID
+	OrderState         uint8
+	OrderStateContent  string
+	OrderedAt          time.Time
+	RemainingEditCount uint8
+	Requirement        *string
 }

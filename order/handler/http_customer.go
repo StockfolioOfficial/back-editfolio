@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/stockfolioofficial/back-editfolio/domain"
+	"github.com/stockfolioofficial/back-editfolio/util/pointer"
 )
 
 type CreateOrderRequest struct {
@@ -104,6 +105,18 @@ type DoneOrderResponse struct {
 // @Success 200 {object} DoneOrderResponse true "의뢰 완료 요청 성공"
 // @Router /order/recent-processing/done [post]
 func (c *OrderController) myOrderDone(ctx echo.Context, userId uuid.UUID) error {
-	//TODO 채우세요
-	return ctx.JSON(http.StatusOK, DoneOrderResponse{Id: uuid.New()})
+
+	orderId, err := c.useCase.MyOrderDone(ctx.Request().Context(), domain.OrderDone{
+		UserId: userId,
+	})
+
+	switch err {
+	case nil:
+		return ctx.JSON(http.StatusOK, DoneOrderResponse{Id: orderId})
+	case domain.ErrUserNotCustomer:
+		return ctx.JSON(http.StatusBadRequest, domain.ErrUserNotCustomer)
+	default:
+		log.WithError(err).Error(tag, "order done requirement failed")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
 }
