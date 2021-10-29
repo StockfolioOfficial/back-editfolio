@@ -123,11 +123,14 @@ func (u *ucase) RequestOrder(ctx context.Context, in domain.RequestOrder) (newId
 	return
 }
 
-func (u *ucase) OrderDone(ctx context.Context, in domain.OrderDone) (orderId uuid.UUID, err error) {
+func (u *ucase) RequestEditOrder(ctx context.Context, in domain.RequestEditOrder) (err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
-	var order *domain.Order
+	var (
+		order *domain.Order
+		state *domain.OrderState
+	)
 	g, gc := errgroup.WithContext(ctx)
 	g.Go(func() (err error) {
 		exists, err := u.userRepo.GetById(gc, in.UserId)
@@ -149,8 +152,22 @@ func (u *ucase) OrderDone(ctx context.Context, in domain.OrderDone) (orderId uui
 
 		if order == nil {
 			err = domain.ErrItemNotFound
+			return
 		}
 
+		if order.IsEmptyEditCount() {
+			err = domain.ErrWeirdData
+			return
+		}
+
+		order.UseEdit()
+		return
+	})
+	g.Go(func() (err error) {
+		state, _ = u.orderStateRepo.GetByCode(gc, domain.OrderStateCodeRequestEdit)
+		if state == nil {
+			err = errors.New("orderStateRepo.GetByCode domain.OrderStateCodeRequestEdit not exists state")
+		}
 		return
 	})
 	err = g.Wait()
@@ -158,7 +175,62 @@ func (u *ucase) OrderDone(ctx context.Context, in domain.OrderDone) (orderId uui
 		return
 	}
 
-	order.Done()
+	if order.State == state.Id {
+		err = domain.ErrItemAlreadyExist
+		return
+	}
+	order.State = state.Id
+	err = u.orderRepo.Save(c, order)
+	return
+}
+
+func (u *ucase) OrderDone(ctx context.Context, in domain.OrderDone) (orderId uuid.UUID, err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	var (
+		order *domain.Order
+		state *domain.OrderState
+	)
+	g, gc := errgroup.WithContext(ctx)
+	g.Go(func() (err error) {
+		exists, err := u.userRepo.GetById(gc, in.UserId)
+		if err != nil {
+			return
+		}
+
+		if !domain.CheckUserAlive(exists, domain.User.IsCustomer) {
+			err = domain.ErrNoPermission
+		}
+
+		return
+	})
+	g.Go(func() (err error) {
+		order, err = u.orderRepo.GetRecentByOrdererId(c, in.UserId)
+		if err != nil {
+			return
+		}
+
+		if order == nil || order.IsDone() {
+			err = domain.ErrItemNotFound
+		}
+
+		order.Done()
+		return
+	})
+	g.Go(func() (err error) {
+		state, _ = u.orderStateRepo.GetByCode(gc, domain.OrderStateCodeDone)
+		if state == nil {
+			err = errors.New("orderStateRepo.GetByCode domain.OrderStateCodeDone not exists state")
+		}
+		return
+	})
+	err = g.Wait()
+	if err != nil {
+		return
+	}
+
+	order.State = state.Id
 	err = u.orderRepo.Save(c, order)
 	if err != nil {
 		return

@@ -45,12 +45,24 @@ func (Order) TableName() string {
 	return "order"
 }
 
+func (o *Order) IsEmptyEditCount() bool {
+	return o.RemainingEditCount() == 0
+}
+
 func (o *Order) RemainingEditCount() uint8 {
 	return o.TotalEditCount - o.EditCount
 }
 
+func (o *Order) UseEdit() {
+	o.EditCount++
+}
+
 func (o *Order) Done() {
 	o.DoneAt = pointer.Time(time.Now())
+}
+
+func (o *Order) IsDone() bool {
+	return o.DoneAt != nil
 }
 
 type OrderGeneralState uint8
@@ -94,6 +106,10 @@ type OrderTxRepository interface {
 type RequestOrder struct {
 	UserId      uuid.UUID
 	Requirement string
+}
+
+type RequestEditOrder struct {
+	UserId uuid.UUID
 }
 
 type OrderDone struct {
@@ -155,6 +171,8 @@ type OrderDetailInfo struct {
 
 type OrderUseCase interface {
 	RequestOrder(ctx context.Context, in RequestOrder) (uuid.UUID, error)
+	RequestEditOrder(ctx context.Context, in RequestEditOrder) error
+
 	OrderDone(ctx context.Context, in OrderDone) (uuid.UUID, error)
 
 	UpdateOrderInfo(ctx context.Context, in UpdateOrderInfo) error
