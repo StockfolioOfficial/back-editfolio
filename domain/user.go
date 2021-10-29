@@ -261,19 +261,16 @@ type DeleteAdminUser struct {
 	UserId uuid.UUID
 }
 
-type CustomerInfoDetail struct {
+type CustomerInfoDetailData struct {
 	UserId         uuid.UUID
 	Name           string
 	ChannelName    string
 	ChannelLink    string
 	Email          string
 	Mobile         string
-	OrderableCount uint32
 	PersonaLink    string
 	OnedriveLink   string
 	Memo           string
-	SubscribeStart *time.Time
-	SubscribeEnd   *time.Time
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }
@@ -296,6 +293,15 @@ type CustomerInfoData struct {
 	CreatedAt   time.Time
 }
 
+type CustomerSubscribeInfoData struct {
+	UserId              uuid.UUID  `json:"userId"`
+	Name                string     `json:"name"`
+	SubscribeStart      *time.Time `json:"subscribeStart"`
+	SubscribeEnd        *time.Time `json:"subscribeEnd"`
+	RemainingOrderCount uint8      `json:"remainingOrderCount"`
+	OnedriveLink        string     `json:"onedriveLink"`
+}
+
 type UserUseCase interface {
 	SignInUser(ctx context.Context, in SignInUser) (string, error)
 
@@ -310,9 +316,11 @@ type UserUseCase interface {
 	DeleteCustomerUser(ctx context.Context, in DeleteCustomerUser) error
 	DeleteAdminUser(ctx context.Context, in DeleteAdminUser) error
 
-	GetCustomerInfoDetailByUserId(ctx context.Context, userId uuid.UUID) (CustomerInfoDetail, error)
+	GetCustomerInfoDetailByUserId(ctx context.Context, userId uuid.UUID) (CustomerInfoDetailData, error)
 	FetchAllAdmin(ctx context.Context, option FetchAdminOption) ([]AdminInfoData, error)
 	FetchAllCustomer(ctx context.Context, option FetchCustomerOption) ([]CustomerInfoData, error)
+
+	CustomerSubscribeInfoByUserId(ctx context.Context, userId uuid.UUID) (CustomerSubscribeInfoData, error)
 }
 
 type TokenGenerateAdapter interface {

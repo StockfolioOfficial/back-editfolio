@@ -5,6 +5,8 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"github.com/stockfolioofficial/back-editfolio/domain"
+	"golang.org/x/sync/errgroup"
+	"time"
 )
 
 func (u *ucase) FetchAllAdmin(ctx context.Context, option domain.FetchAdminOption) (res []domain.AdminInfoData, err error) {
@@ -67,7 +69,7 @@ func (u *ucase) FetchAllCustomer(ctx context.Context, option domain.FetchCustome
 	return
 }
 
-func (u *ucase) GetCustomerInfoDetailByUserId(ctx context.Context, userId uuid.UUID) (res domain.CustomerInfoDetail, err error) {
+func (u *ucase) GetCustomerInfoDetailByUserId(ctx context.Context, userId uuid.UUID) (res domain.CustomerInfoDetailData, err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
@@ -86,21 +88,68 @@ func (u *ucase) GetCustomerInfoDetailByUserId(ctx context.Context, userId uuid.U
 		return
 	}
 
-	res = domain.CustomerInfoDetail{
+	res = domain.CustomerInfoDetailData{
 		UserId:         detail.Id,
 		Name:           detail.Customer.Name,
 		ChannelName:    detail.Customer.ChannelName,
 		ChannelLink:    detail.Customer.ChannelLink,
 		Email:          detail.Customer.Email,
 		Mobile:         detail.Customer.Mobile,
-		OrderableCount: detail.Customer.OrderableCount,
 		PersonaLink:    detail.Customer.PersonaLink,
 		OnedriveLink:   detail.Customer.OnedriveLink,
 		Memo:           detail.Customer.Memo,
-		SubscribeStart: detail.Customer.SubscribeStart,
-		SubscribeEnd:   detail.Customer.SubscribeEnd,
 		CreatedAt:      detail.CreatedAt,
 		UpdatedAt:      detail.UpdatedAt,
 	}
+	return
+}
+
+func (u *ucase) CustomerSubscribeInfoByUserId(ctx context.Context, userId uuid.UUID) (res domain.CustomerSubscribeInfoData, err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	g, gc := errgroup.WithContext(c)
+	g.Go(func() (err error) {
+		exists, err := u.userRepo.GetByIdWithCustomer(gc, userId)
+		if err != nil {
+			return
+		}
+
+		if exists == nil {
+			err = domain.ErrItemNotFound
+			return
+		}
+
+		if exists.Customer == nil {
+			err = errors.New("join failed customer info data")
+			return
+		}
+
+
+		res.UserId = userId
+		res.Name = exists.Customer.Name
+		res.OnedriveLink = exists.Customer.OnedriveLink
+		return
+	})
+	g.Go(func() (err error) {
+		ticket, err := u.orderTicketRepo.GetByOwnerIdBetweenStartAndEnd(gc, userId, time.Now())
+		if err != nil {
+			return
+		}
+
+		if ticket != nil {
+			res.SubscribeStart = ticket.StartAt
+			res.SubscribeEnd = ticket.EndAt
+			res.RemainingOrderCount = ticket.RemainingOrderCount()
+		}
+
+		return
+	})
+	err = g.Wait()
+	if err != nil {
+		res = domain.CustomerSubscribeInfoData{}
+		return
+	}
+
 	return
 }
