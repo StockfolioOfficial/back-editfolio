@@ -168,7 +168,7 @@ func (u *ucase) OrderDone(ctx context.Context, in domain.OrderDone) (orderId uui
 	return
 }
 
-func (u *ucase) UpdateOrderInfo(ctx context.Context, in *domain.UpdateOrderInfo) (err error) {
+func (u *ucase) UpdateOrderInfo(ctx context.Context, in domain.UpdateOrderInfo) (err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
@@ -225,4 +225,59 @@ func (u *ucase) UpdateOrderInfo(ctx context.Context, in *domain.UpdateOrderInfo)
 	oExists.State = in.OrderState
 
 	return u.orderRepo.Save(c, oExists)
+}
+
+
+func (u *ucase) OrderAssignSelf(ctx context.Context, in domain.OrderAssignSelf) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	var (
+		order *domain.Order
+		state *domain.OrderState
+	)
+	g, gc := errgroup.WithContext(c)
+	g.Go(func() (err error) {
+		order, err = u.orderRepo.GetById(gc, in.OrderId)
+		if err != nil {
+			return
+		}
+
+		if order.Assignee != nil {
+			err = domain.ErrItemAlreadyExist
+			return
+		}
+
+		order.Assignee = &in.Assignee
+		return
+	})
+	g.Go(func() (err error) {
+		user, err := u.userRepo.GetById(gc, in.Assignee)
+		if err != nil {
+			return
+		}
+
+		if !domain.CheckUserAlive(user,
+			domain.User.IsAdmin,
+			domain.User.IsSuperAdmin) {
+			err = domain.ErrNoPermission
+		}
+
+		return
+	})
+	g.Go(func() (err error) {
+		state, _ = u.orderStateRepo.GetByCode(gc, domain.OrderStateCodeTake)
+		if state == nil {
+			err = errors.New("orderStateRepo.GetByCode domain.OrderStateCodeTake not exists state")
+		}
+		return
+	})
+	err = g.Wait()
+	if err != nil {
+		return
+	}
+
+	order.State = state.Id
+	err = u.orderRepo.Save(c, order)
+	return
 }
