@@ -4,8 +4,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/labstack/gommon/log"
-	"github.com/stockfolioofficial/back-editfolio/core/config"
 )
 
 type echoBindWithValidate struct {
@@ -43,20 +41,12 @@ func NewEcho() (e *echo.Echo) {
 type middlewares []echo.MiddlewareFunc
 
 func NewMiddleware() (m middlewares) {
-	logLv := log.ERROR
-	if config.IsDebug {
-		logLv = log.DEBUG
-	}
-
 	m = append(m, middleware.CORSWithConfig(middleware.CORSConfig{
 		// todo debug 추후 production 모드일때 스크립트 형태로 외부에서 주입 받는 기능 추가 필요
 		AllowOrigins: []string{"*"},
 		AllowHeaders: []string{"*"},
 		AllowMethods: []string{"*"},
 	}))
-	m = append(m, middleware.RecoverWithConfig(middleware.RecoverConfig{
-		DisablePrintStack: true,
-		LogLevel:          logLv,
-	}))
+	m = append(m, middleware.Recover())
 	return
 }

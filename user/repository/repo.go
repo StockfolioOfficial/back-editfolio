@@ -94,11 +94,3 @@ func (r *repo) Transaction(ctx context.Context, fn func(userRepo domain.UserTxRe
 		return fn(&repo{db: tx})
 	}, options...)
 }
-
-func (r *repo) With(tx gormx.Tx) domain.UserTxRepository {
-	return &repo{db: tx.Get()}
-}
-
-func (r *repo) Delete(ctx context.Context, user *domain.User) error {
-	return r.db.WithContext(ctx).Delete(user).Error
-}

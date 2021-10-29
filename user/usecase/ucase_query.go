@@ -67,24 +67,26 @@ func (u *ucase) FetchAllCustomer(ctx context.Context, option domain.FetchCustome
 	return
 }
 
-func (u *ucase) GetCustomerInfoDetailByUserId(ctx context.Context, userId uuid.UUID) (domain.CustomerInfoDetail, error) {
+func (u *ucase) GetCustomerInfoDetailByUserId(ctx context.Context, userId uuid.UUID) (res domain.CustomerInfoDetail, err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
 	detail, err := u.userRepo.GetByIdWithCustomer(c, userId)
 	if err != nil {
-		return domain.CustomerInfoDetail{}, err
+		return
 	}
 
 	if detail == nil {
-		return domain.CustomerInfoDetail{}, domain.ErrItemNotFound
+		err = domain.ErrItemNotFound
+		return
 	}
 
 	if detail.Customer == nil {
-		return domain.CustomerInfoDetail{}, errors.New("join failed customer info data")
+		err = errors.New("join failed customer info data")
+		return
 	}
 
-	return domain.CustomerInfoDetail{
+	res = domain.CustomerInfoDetail{
 		UserId:         detail.Id,
 		Name:           detail.Customer.Name,
 		ChannelName:    detail.Customer.ChannelName,
@@ -99,5 +101,6 @@ func (u *ucase) GetCustomerInfoDetailByUserId(ctx context.Context, userId uuid.U
 		SubscribeEnd:   detail.Customer.SubscribeEnd,
 		CreatedAt:      detail.CreatedAt,
 		UpdatedAt:      detail.UpdatedAt,
-	}, nil
+	}
+	return
 }

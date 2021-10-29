@@ -11,8 +11,6 @@ var (
 
 	ErrUserWrongPassword = errors.New("wrong password")
 
-	ErrUserNotAdmin = errors.New("not admin")
-
 	ErrNoPermission = errors.New("no permission")
 
 	ErrItemAlreadyExist = errors.New("item already exsits")

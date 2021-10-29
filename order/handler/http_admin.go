@@ -211,7 +211,7 @@ type OrderDetailInfoResponse struct {
 	Assignee           *orderDetailAssigneeInfoResponse `json:"assignee"`
 	OrderState         uint8                            `json:"orderState" validate:"required" example:"3"`
 	OrderStateContent  string                           `json:"orderStateContent" validate:"required" example:"이펙트 추가 중"`
-	RemainingEditCount uint16                           `json:"remainingEditCount" validate:"required" example:"2"`
+	RemainingEditCount uint8                            `json:"remainingEditCount" validate:"required" example:"2"`
 	Requirement        string                           `json:"requirement"`
 } // @name OrderDetailInfoResponse
 
@@ -254,8 +254,8 @@ func (c *OrderController) getOrderDetailInfo(ctx echo.Context) error {
 		Assignee:           assignee,
 		OrderState:         res.OrderState,
 		OrderStateContent:  res.OrderStateContent,
-		RemainingEditCount: uint16(res.RemainingEditCount),
-		Requirement:        *res.Requirement,
+		RemainingEditCount: res.RemainingEditCount,
+		Requirement:        res.Requirement,
 	})
 }
 
@@ -276,7 +276,7 @@ type UpdateOrderInfoRequest struct {
 // @Param requestBody body UpdateOrderInfoRequest true "편집 의뢰 요청 데이터 구조"
 // @Success 204 "정보 수정 완료"
 // @Router /order/{order_id} [put]
-func (c *OrderController) updateOrderDetailInfo(ctx echo.Context) error {
+func (c *OrderController) updateOrderInfo(ctx echo.Context) error {
 	var req UpdateOrderInfoRequest
 	err := ctx.Bind(&req)
 	if err != nil {
@@ -286,7 +286,7 @@ func (c *OrderController) updateOrderDetailInfo(ctx echo.Context) error {
 		})
 	}
 
-	err = c.useCase.UpdateOrderDetailInfo(ctx.Request().Context(), &domain.UpdateOrderInfo{
+	err = c.useCase.UpdateOrderInfo(ctx.Request().Context(), &domain.UpdateOrderInfo{
 		OrderId:    req.OrderId,
 		DueDate:    req.DueDate,
 		Assignee:   req.Assignee,

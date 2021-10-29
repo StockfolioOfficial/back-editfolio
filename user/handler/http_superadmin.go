@@ -90,7 +90,7 @@ func (c *UserController) updateAdminBySuperAdmin(ctx echo.Context) error {
 		})
 	}
 
-	err = c.useCase.UpdateAdminInfoBySuperAdmin(ctx.Request().Context(), domain.UpdateAdminInfoBySuperAdmin{
+	err = c.useCase.ForceUpdateAdminInfo(ctx.Request().Context(), domain.ForceUpdateAdminInfo{
 		UserId:   req.UserId,
 		Password: req.Password,
 		Name:     req.Name,
@@ -137,7 +137,7 @@ func (c *UserController) deleteAdminBySuperAdmin(ctx echo.Context) error {
 		})
 	}
 	err = c.useCase.DeleteAdminUser(ctx.Request().Context(), domain.DeleteAdminUser{
-		Id: req.Id,
+		UserId: req.Id,
 	})
 
 	switch err {

@@ -9,10 +9,10 @@ import (
 )
 
 type SignInRequest struct {
-	// Username, 아이디
+	// Username 아이디
 	Username string `json:"username" validate:"required,min=8" example:"example@example.com"`
 
-	// Password, 패스워드
+	// Password 패스워드
 	Password string `json:"password" validate:"required,min=8" example:"abcd12!@"`
 } // @name SignInRequest
 

@@ -253,7 +253,7 @@ func (c *UserController) deleteCustomerUser(ctx echo.Context) error {
 		})
 	}
 	err = c.useCase.DeleteCustomerUser(ctx.Request().Context(), domain.DeleteCustomerUser{
-		Id: req.Id,
+		UserId: req.Id,
 	})
 
 	switch err {

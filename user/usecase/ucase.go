@@ -34,213 +34,6 @@ type ucase struct {
 	timeout      time.Duration
 }
 
-func (u *ucase) CreateCustomerUser(ctx context.Context, cu domain.CreateCustomerUser) (newId uuid.UUID, err error) {
-	c, cancel := context.WithTimeout(ctx, u.timeout)
-	defer cancel()
-
-	exists, err := u.userRepo.GetByUsername(c, cu.Email)
-
-	if exists != nil {
-		err = domain.ErrItemAlreadyExist
-		return
-	}
-
-	var user = createUser(domain.CustomerUserRole, cu.Email, cu.Mobile)
-	var customer = domain.CreateCustomer(domain.CustomerCreateOption{
-		User:   &user,
-		Name:   cu.Name,
-		Email:  cu.Email,
-		Mobile: cu.Mobile,
-	})
-	err = u.userRepo.Transaction(c, func(ur domain.UserTxRepository) error {
-		mr := u.customerRepo.With(ur)
-		g, gc := errgroup.WithContext(c)
-		g.Go(func() error {
-			return ur.Save(gc, &user)
-		})
-		g.Go(func() error {
-			return mr.Save(gc, &customer)
-		})
-		return g.Wait()
-	})
-	newId = user.Id
-	return
-}
-
-func (u *ucase) UpdateCustomerUser(ctx context.Context, cu domain.UpdateCustomerUser) (err error) {
-	c, cancel := context.WithTimeout(ctx, u.timeout)
-	defer cancel()
-
-	exists, err := u.userRepo.GetByUsername(c, cu.Email)
-	if err != nil {
-		return
-	}
-
-	var user *domain.User
-	if exists != nil {
-		if exists.Id == cu.UserId {
-			user = exists
-		} else {
-			err = domain.ErrItemAlreadyExist
-			return
-		}
-	}
-
-	if user == nil {
-		user, err = u.userRepo.GetById(c, cu.UserId)
-		if err != nil {
-			return
-		}
-	}
-
-	if !domain.ExistsCustomer(user) {
-		err = domain.ErrItemNotFound
-		return
-	}
-
-	err = user.LoadCustomerInfo(c, u.customerRepo)
-	if err != nil {
-		return
-	}
-
-	user.UpdateCustomerInfo(
-		cu.Name,
-		cu.ChannelName,
-		cu.ChannelLink,
-		cu.Email,
-		cu.Mobile,
-		cu.PersonaLink,
-		cu.OnedriveLink,
-		cu.Memo,
-	)
-
-	g, gc := errgroup.WithContext(c)
-	g.Go(func() error {
-		return u.userRepo.Save(gc, user)
-	})
-	g.Go(func() error {
-		return u.customerRepo.Save(c, user.Customer)
-	})
-	return g.Wait()
-}
-
-func (u *ucase) UpdateAdminPassword(ctx context.Context, up domain.UpdateAdminPassword) (err error) {
-	c, cancel := context.WithTimeout(ctx, u.timeout)
-	defer cancel()
-
-	user, err := u.userRepo.GetById(c, up.UserId)
-	if !domain.ExistsAdmin(user) {
-		err = domain.ErrItemNotFound
-		return
-	}
-
-	if !user.ComparePassword(up.OldPassword) {
-		err = domain.ErrUserWrongPassword
-		return
-	}
-
-	user.UpdatePassword(up.NewPassword)
-	return u.userRepo.Save(c, user)
-}
-
-func (u *ucase) UpdateAdminInfo(ctx context.Context, ui domain.UpdateAdminInfo) (err error) {
-	c, cancel := context.WithTimeout(ctx, u.timeout)
-	defer cancel()
-
-	exists, err := u.userRepo.GetByUsername(c, ui.Username)
-	if err != nil {
-		return
-	}
-
-	var user *domain.User
-	if exists != nil {
-		if exists.Id == ui.UserId {
-			user = exists
-		} else {
-			err = domain.ErrItemAlreadyExist
-			return
-		}
-	}
-
-	if user == nil {
-		user, err = u.userRepo.GetById(c, ui.UserId)
-		if err != nil {
-			return
-		}
-	}
-
-	if !domain.ExistsAdmin(user) {
-		err = domain.ErrItemNotFound
-		return
-	}
-
-	err = user.LoadManagerInfo(c, u.managerRepo)
-	if err != nil {
-		return
-	}
-
-	user.UpdateManagerInfo(ui.Username, ui.Name, ui.Nickname)
-
-	g, gc := errgroup.WithContext(c)
-	g.Go(func() error {
-		return u.userRepo.Save(gc, user)
-	})
-	g.Go(func() error {
-		return u.managerRepo.Save(c, user.Manager)
-	})
-	return g.Wait()
-}
-
-func (u *ucase) UpdateAdminInfoBySuperAdmin(ctx context.Context, fu domain.UpdateAdminInfoBySuperAdmin) (err error) {
-	c, cancel := context.WithTimeout(ctx, u.timeout)
-	defer cancel()
-
-	exists, err := u.userRepo.GetByUsername(c, fu.Username)
-	if err != nil {
-		return
-	}
-
-	var user *domain.User
-	if exists != nil {
-		if exists.Id == fu.UserId {
-			user = exists
-		} else {
-			err = domain.ErrItemAlreadyExist
-			return
-		}
-	}
-
-	if user == nil {
-		user, err = u.userRepo.GetById(c, fu.UserId)
-		if err != nil {
-			return
-		}
-	}
-
-	if !domain.ExistsAdmin(user) {
-		err = domain.ErrItemNotFound
-		return
-	}
-
-	err = user.LoadManagerInfo(c, u.managerRepo)
-	if err != nil {
-		return
-	}
-
-	user.UpdatePassword(fu.Password)
-	user.UpdateManagerInfo(fu.Username, fu.Name, fu.Nickname)
-
-	g, gc := errgroup.WithContext(c)
-	g.Go(func() error {
-		return u.userRepo.Save(gc, user)
-	})
-	g.Go(func() error {
-		return u.managerRepo.Save(c, user.Manager)
-	})
-	return g.Wait()
-
-}
-
 func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (token string, err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
@@ -265,37 +58,56 @@ func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (token str
 	return
 }
 
-func (u *ucase) DeleteCustomerUser(ctx context.Context, du domain.DeleteCustomerUser) (err error) {
+func (u *ucase) CreateCustomerUser(ctx context.Context, in domain.CreateCustomerUser) (newId uuid.UUID, err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
-	user, err := u.userRepo.GetById(c, du.Id)
-
-	if user == nil || !user.IsCustomer() {
-		err = domain.ErrItemNotFound
+	exists, err := u.userRepo.GetByUsername(c, in.Email)
+	if exists != nil {
+		err = domain.ErrItemAlreadyExist
 		return
 	}
 
-	user.Delete()
-	return u.userRepo.Save(ctx, user)
+	var user = createUser(domain.CustomerUserRole, in.Email, in.Mobile)
+	var customer = domain.CreateCustomer(domain.CustomerCreateOption{
+		User:   &user,
+		Name:   in.Name,
+		Email:  in.Email,
+		Mobile: in.Mobile,
+	})
+
+	err = u.userRepo.Transaction(c, func(ur domain.UserTxRepository) error {
+		mr := u.customerRepo.With(ur)
+		g, gc := errgroup.WithContext(c)
+		g.Go(func() error {
+			return ur.Save(gc, &user)
+		})
+		g.Go(func() error {
+			return mr.Save(gc, &customer)
+		})
+		return g.Wait()
+	})
+	newId = user.Id
+	return
 }
 
-func (u *ucase) CreateAdminUser(ctx context.Context, au domain.CreateAdminUser) (newId uuid.UUID, err error) {
+
+func (u *ucase) CreateAdminUser(ctx context.Context, in domain.CreateAdminUser) (newId uuid.UUID, err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
-	email, err := u.userRepo.GetByUsername(c, au.Email)
+	email, err := u.userRepo.GetByUsername(c, in.Email)
 
 	if email != nil {
 		err = domain.ErrItemAlreadyExist
 		return
 	}
 
-	var user = createUser(domain.AdminUserRole, au.Email, au.Password)
+	var user = createUser(domain.AdminUserRole, in.Email, in.Password)
 	var manager = domain.CreateManager(domain.ManagerCreateOption{
 		User:     &user,
-		Name:     au.Name,
-		Nickname: au.Nickname,
+		Name:     in.Name,
+		Nickname: in.Nickname,
 	})
 
 	err = u.userRepo.Transaction(c, func(ur domain.UserTxRepository) error {
@@ -313,26 +125,221 @@ func (u *ucase) CreateAdminUser(ctx context.Context, au domain.CreateAdminUser) 
 	return
 }
 
-func (u *ucase) loadManager(ctx context.Context, userId uuid.UUID) (*domain.User, error) {
-	var user *domain.User
-	var manager *domain.Manager
+func (u *ucase) UpdateCustomerUser(ctx context.Context, in domain.UpdateCustomerUser) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
 
-	g, c := errgroup.WithContext(ctx)
-	g.Go(func() (err error) {
-		user, err = u.userRepo.GetById(c, userId)
-		return
-	})
-	g.Go(func() (err error) {
-		manager, err = u.managerRepo.GetById(c, userId)
-		return
-	})
-	err := g.Wait()
+	exists, err := u.userRepo.GetByUsername(c, in.Email)
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	user.Manager = manager
-	return user, nil
+	var user *domain.User
+	if exists != nil {
+		if exists.Id == in.UserId {
+			user = exists
+		} else {
+			err = domain.ErrItemAlreadyExist
+			return
+		}
+	}
+
+	if user == nil {
+		user, err = u.userRepo.GetById(c, in.UserId)
+		if err != nil {
+			return
+		}
+	}
+
+	if !domain.CheckUserAlive(user,
+		domain.User.IsCustomer) {
+		err = domain.ErrItemNotFound
+		return
+	}
+
+	err = user.LoadCustomerInfo(c, u.customerRepo)
+	if err != nil {
+		return
+	}
+
+	user.UpdateCustomerInfo(
+		in.Name,
+		in.ChannelName,
+		in.ChannelLink,
+		in.Email,
+		in.Mobile,
+		in.PersonaLink,
+		in.OnedriveLink,
+		in.Memo,
+	)
+
+	return u.userRepo.Transaction(c, func(ur domain.UserTxRepository) error {
+		g, gc := errgroup.WithContext(c)
+		g.Go(func() error {
+			return u.userRepo.Save(gc, user)
+		})
+		g.Go(func() error {
+			return u.customerRepo.Save(gc, user.Customer)
+		})
+		return g.Wait()
+	})
+}
+
+func (u *ucase) UpdateAdminPassword(ctx context.Context, in domain.UpdateAdminPassword) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	user, err := u.userRepo.GetById(c, in.UserId)
+	if !domain.CheckUserAlive(user,
+		domain.User.IsAdmin,
+		domain.User.IsSuperAdmin) {
+		err = domain.ErrItemNotFound
+		return
+	}
+
+	if !user.ComparePassword(in.OldPassword) {
+		err = domain.ErrUserWrongPassword
+		return
+	}
+
+	user.UpdatePassword(in.NewPassword)
+	return u.userRepo.Save(c, user)
+}
+
+func (u *ucase) UpdateAdminInfo(ctx context.Context, in domain.UpdateAdminInfo) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	exists, err := u.userRepo.GetByUsername(c, in.Username)
+	if err != nil {
+		return
+	}
+
+	var user *domain.User
+	if exists != nil {
+		if exists.Id == in.UserId {
+			user = exists
+		} else {
+			err = domain.ErrItemAlreadyExist
+			return
+		}
+	}
+
+	if user == nil {
+		user, err = u.userRepo.GetById(c, in.UserId)
+		if err != nil {
+			return
+		}
+	}
+
+	if !domain.CheckUserAlive(user,
+		domain.User.IsAdmin,
+		domain.User.IsSuperAdmin) {
+		err = domain.ErrItemNotFound
+		return
+	}
+
+	err = user.LoadManagerInfo(c, u.managerRepo)
+	if err != nil {
+		return
+	}
+
+	user.UpdateManagerInfo(in.Username, in.Name, in.Nickname)
+	return u.userRepo.Transaction(c, func(ur domain.UserTxRepository) error {
+		g, gc := errgroup.WithContext(c)
+		g.Go(func() error {
+			return u.userRepo.Save(gc, user)
+		})
+		g.Go(func() error {
+			return u.managerRepo.Save(gc, user.Manager)
+		})
+		return g.Wait()
+	})
+}
+
+func (u *ucase) ForceUpdateAdminInfo(ctx context.Context, in domain.ForceUpdateAdminInfo) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	exists, err := u.userRepo.GetByUsername(c, in.Username)
+	if err != nil {
+		return
+	}
+
+	var user *domain.User
+	if exists != nil {
+		if exists.Id == in.UserId {
+			user = exists
+		} else {
+			err = domain.ErrItemAlreadyExist
+			return
+		}
+	}
+
+	if user == nil {
+		user, err = u.userRepo.GetById(c, in.UserId)
+		if err != nil {
+			return
+		}
+	}
+
+	if !domain.CheckUserAlive(user,
+		domain.User.IsAdmin,
+		domain.User.IsSuperAdmin) {
+		err = domain.ErrItemNotFound
+		return
+	}
+
+	err = user.LoadManagerInfo(c, u.managerRepo)
+	if err != nil {
+		return
+	}
+
+	user.UpdatePassword(in.Password)
+	user.UpdateManagerInfo(in.Username, in.Name, in.Nickname)
+	return u.userRepo.Transaction(c, func(ur domain.UserTxRepository) error {
+		g, gc := errgroup.WithContext(c)
+		g.Go(func() error {
+			return u.userRepo.Save(gc, user)
+		})
+		g.Go(func() error {
+			return u.managerRepo.Save(gc, user.Manager)
+		})
+		return g.Wait()
+	})
+}
+
+func (u *ucase) DeleteCustomerUser(ctx context.Context, in domain.DeleteCustomerUser) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	user, err := u.userRepo.GetById(c, in.UserId)
+	if err != nil {
+		return
+	}
+
+	if !domain.CheckUserAlive(user, domain.User.IsCustomer) {
+		err = domain.ErrItemNotFound
+		return
+	}
+
+	user.Delete()
+	return u.userRepo.Save(c, user)
+}
+
+func (u *ucase) DeleteAdminUser(ctx context.Context, in domain.DeleteAdminUser) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	user, err := u.userRepo.GetById(c, in.UserId)
+
+	if !domain.CheckUserAlive(user, domain.User.IsAdmin) {
+		err = domain.ErrItemNotFound
+		return
+	}
+
+	user.Delete()
+	return u.userRepo.Save(c, user)
 }
 
 func createUser(role domain.UserRole, username, password string) (user domain.User) {
@@ -343,19 +350,4 @@ func createUser(role domain.UserRole, username, password string) (user domain.Us
 
 	user.UpdatePassword(password)
 	return
-}
-
-func (u *ucase) DeleteAdminUser(ctx context.Context, da domain.DeleteAdminUser) (err error) {
-	c, cancel := context.WithTimeout(ctx, u.timeout)
-	defer cancel()
-
-	user, err := u.userRepo.GetById(c, da.Id)
-
-	if user == nil || user.IsDeleted() || !user.IsAdmin() {
-		err = domain.ErrItemNotFound
-		return
-	}
-
-	user.Delete()
-	return u.userRepo.Save(ctx, user)
 }

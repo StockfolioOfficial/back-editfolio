@@ -1,6 +1,9 @@
 package domain
 
-import "github.com/google/uuid"
+import (
+	"context"
+	"github.com/google/uuid"
+)
 
 type SubscribeTermUnit string
 
@@ -25,4 +28,9 @@ type Product struct {
 	OrderCount              uint8             `gorm:"not null"`
 	EditCount               uint8             `gorm:"not null"`
 	ExternalOriginId        uint64            `gorm:"type:not null;index"`
+}
+
+type ProductRepository interface {
+	Save(ctx context.Context, product *Product) error
+	GetById(ctx context.Context, id uuid.UUID) (*Product, error)
 }

@@ -19,6 +19,44 @@ const (
 	CustomerUserRole   UserRole = "CUSTOMER"
 )
 
+type UserCreateOption struct {
+	Role     UserRole
+	Username string
+}
+
+func CheckUserAlive(u *User, scope ...func(user User) bool) bool {
+	if u == nil {
+		return false
+	}
+
+	if u.IsDeleted() {
+		return false
+	}
+
+	if len(scope) == 0 {
+		return true
+	}
+
+	for i := range scope {
+		if scope[i](*u) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func CreateUser(option UserCreateOption) User {
+	return User{
+		Id:        uuid.New(),
+		Role:      option.Role,
+		Username:  option.Username,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		DeletedAt: nil,
+	}
+}
+
 type User struct {
 	Id        uuid.UUID  `gorm:"type:char(36);primaryKey"`
 	Role      UserRole   `gorm:"size:30;index;not null"`
@@ -35,22 +73,6 @@ type User struct {
 
 func (User) TableName() string {
 	return "user"
-}
-
-type UserCreateOption struct {
-	Role     UserRole
-	Username string
-}
-
-func CreateUser(option UserCreateOption) User {
-	return User{
-		Id:        uuid.New(),
-		Role:      option.Role,
-		Username:  option.Username,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		DeletedAt: nil,
-	}
 }
 
 func (u *User) UpdateUsername(username string) {
@@ -74,19 +96,19 @@ func (u *User) ComparePassword(plainPass string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(plainPass)) == nil
 }
 
-func (u *User) IsCustomer() bool {
+func (u User) IsCustomer() bool {
 	return u.HasRole(CustomerUserRole)
 }
 
-func (u *User) IsAdmin() bool {
+func (u User) IsAdmin() bool {
 	return u.HasRole(AdminUserRole)
 }
 
-func (u *User) IsSuperAdmin() bool {
+func (u User) IsSuperAdmin() bool {
 	return u.HasRole(SuperAdminUserRole)
 }
 
-func (u *User) HasRole(role UserRole) bool {
+func (u User) HasRole(role UserRole) bool {
 	return u.Role == role
 }
 
@@ -154,20 +176,20 @@ func (u *User) UpdateCustomerInfo(name, channelName, channelLink, email, mobile,
 	customer.Memo = memo
 }
 
-func ExistsAdmin(u *User) bool {
-	return u != nil && !u.IsDeleted() && u.IsAdmin()
+type FetchAdminOption struct {
+	Query string
 }
 
-func ExistsCustomer(u *User) bool {
-	return u != nil && !u.IsDeleted() && u.IsCustomer()
+type FetchCustomerOption struct {
+	Query string
 }
 
 type UserRepository interface {
 	Save(ctx context.Context, user *User) error
+	Transaction(ctx context.Context, fn func(userRepo UserTxRepository) error, options ...*sql.TxOptions) error
+
 	GetByUsername(ctx context.Context, username string) (*User, error)
 	GetById(ctx context.Context, userId uuid.UUID) (*User, error)
-	Transaction(ctx context.Context, fn func(userRepo UserTxRepository) error, options ...*sql.TxOptions) error
-	With(tx gormx.Tx) UserTxRepository
 
 	FetchAllAdmin(ctx context.Context, option FetchAdminOption) ([]User, error)
 	FetchAllCustomer(ctx context.Context, option FetchCustomerOption) ([]User, error)
@@ -180,36 +202,15 @@ type UserTxRepository interface {
 	gormx.Tx
 }
 
-type CreateCustomerUser struct {
-	Name   string
-	Email  string
-	Mobile string
-}
-
 type SignInUser struct {
 	Username string
 	Password string
 }
 
-type UpdateAdminPassword struct {
-	OldPassword string
-	NewPassword string
-	UserId      uuid.UUID
-}
-
-type UpdateAdminInfo struct {
-	UserId   uuid.UUID
-	Name     string
-	Username string
-	Nickname string
-}
-
-type UpdateAdminInfoBySuperAdmin struct {
-	UserId   uuid.UUID
-	Name     string
-	Password string
-	Username string
-	Nickname string
+type CreateCustomerUser struct {
+	Name   string
+	Email  string
+	Mobile string
 }
 
 type CreateAdminUser struct {
@@ -231,30 +232,33 @@ type UpdateCustomerUser struct {
 	Memo         string
 }
 
-type FetchAdminOption struct {
-	Query string
+type UpdateAdminInfo struct {
+	UserId   uuid.UUID
+	Name     string
+	Username string
+	Nickname string
 }
 
-type AdminInfoData struct {
-	UserId    uuid.UUID
-	Name      string
-	Nickname  string
-	Email     string
-	CreatedAt time.Time
-}
-
-type FetchCustomerOption struct {
-	Query string
-}
-
-type CustomerInfoData struct {
+type UpdateAdminPassword struct {
 	UserId      uuid.UUID
-	Name        string
-	ChannelName string
-	ChannelLink string
-	Email       string
-	Mobile      string
-	CreatedAt   time.Time
+	OldPassword string
+	NewPassword string
+}
+
+type ForceUpdateAdminInfo struct {
+	UserId   uuid.UUID
+	Name     string
+	Password string
+	Username string
+	Nickname string
+}
+
+type DeleteCustomerUser struct {
+	UserId uuid.UUID
+}
+
+type DeleteAdminUser struct {
+	UserId uuid.UUID
 }
 
 type CustomerInfoDetail struct {
@@ -274,31 +278,43 @@ type CustomerInfoDetail struct {
 	UpdatedAt      time.Time
 }
 
-type UserUseCase interface {
-	CreateCustomerUser(ctx context.Context, cu CreateCustomerUser) (uuid.UUID, error)
-	UpdateCustomerUser(ctx context.Context, cu UpdateCustomerUser) error
-	UpdateAdminPassword(ctx context.Context, up UpdateAdminPassword) error
-	UpdateAdminInfo(ctx context.Context, ui UpdateAdminInfo) error
-	UpdateAdminInfoBySuperAdmin(ctx context.Context, fu UpdateAdminInfoBySuperAdmin) error
-	SignInUser(ctx context.Context, si SignInUser) (string, error)
-	DeleteCustomerUser(ctx context.Context, du DeleteCustomerUser) error
-	CreateAdminUser(ctx context.Context, au CreateAdminUser) (uuid.UUID, error)
-	DeleteAdminUser(ctx context.Context, da DeleteAdminUser) error
+type AdminInfoData struct {
+	UserId    uuid.UUID
+	Name      string
+	Nickname  string
+	Email     string
+	CreatedAt time.Time
+}
 
-	FetchAllAdmin(ctx context.Context, option FetchAdminOption) ([]AdminInfoData, error)
-	FetchAllCustomer(ctx context.Context, option FetchCustomerOption) ([]CustomerInfoData, error)
+type CustomerInfoData struct {
+	UserId      uuid.UUID
+	Name        string
+	ChannelName string
+	ChannelLink string
+	Email       string
+	Mobile      string
+	CreatedAt   time.Time
+}
+
+type UserUseCase interface {
+	SignInUser(ctx context.Context, in SignInUser) (string, error)
+
+	CreateCustomerUser(ctx context.Context, in CreateCustomerUser) (uuid.UUID, error)
+	CreateAdminUser(ctx context.Context, in CreateAdminUser) (uuid.UUID, error)
+
+	UpdateCustomerUser(ctx context.Context, in UpdateCustomerUser) error
+	UpdateAdminPassword(ctx context.Context, in UpdateAdminPassword) error
+	UpdateAdminInfo(ctx context.Context, in UpdateAdminInfo) error
+	ForceUpdateAdminInfo(ctx context.Context, in ForceUpdateAdminInfo) error
+
+	DeleteCustomerUser(ctx context.Context, in DeleteCustomerUser) error
+	DeleteAdminUser(ctx context.Context, in DeleteAdminUser) error
 
 	GetCustomerInfoDetailByUserId(ctx context.Context, userId uuid.UUID) (CustomerInfoDetail, error)
+	FetchAllAdmin(ctx context.Context, option FetchAdminOption) ([]AdminInfoData, error)
+	FetchAllCustomer(ctx context.Context, option FetchCustomerOption) ([]CustomerInfoData, error)
 }
 
 type TokenGenerateAdapter interface {
 	Generate(User) (string, error)
-}
-
-type DeleteCustomerUser struct {
-	Id uuid.UUID
-}
-
-type DeleteAdminUser struct {
-	Id uuid.UUID
 }

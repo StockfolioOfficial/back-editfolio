@@ -7,16 +7,6 @@ import (
 	"github.com/stockfolioofficial/back-editfolio/util/gormx"
 )
 
-type Manager struct {
-	Id       uuid.UUID `gorm:"type:char(36);primaryKey"`
-	Name     string    `gorm:"size:60;index;not null"`
-	Nickname string    `gorm:"size:60;index;not null"`
-}
-
-func (Manager) TableName() string {
-	return "manager"
-}
-
 type ManagerCreateOption struct {
 	User     *User
 	Name     string
@@ -31,11 +21,22 @@ func CreateManager(option ManagerCreateOption) Manager {
 	}
 }
 
+type Manager struct {
+	Id       uuid.UUID `gorm:"type:char(36);primaryKey"`
+	Name     string    `gorm:"size:60;index;not null"`
+	Nickname string    `gorm:"size:60;index;not null"`
+}
+
+func (Manager) TableName() string {
+	return "manager"
+}
+
 type ManagerRepository interface {
 	Save(ctx context.Context, manager *Manager) error
-	FetchByIds(ctx context.Context, ids []uuid.UUID) ([]Manager, error)
-	GetById(ctx context.Context, userId uuid.UUID) (*Manager, error)
 	With(tx gormx.Tx) ManagerTxRepository
+
+	GetById(ctx context.Context, userId uuid.UUID) (*Manager, error)
+	FetchByIds(ctx context.Context, ids []uuid.UUID) ([]Manager, error)
 }
 
 type ManagerTxRepository interface {

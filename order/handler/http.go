@@ -32,7 +32,7 @@ func (c *OrderController) Bind(e *echo.Echo) {
 	//ADMIN
 	e.GET("/order/:orderId", c.getOrderDetailInfo,
 		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
-	e.PUT("/order/:orderId", c.updateOrderDetailInfo,
+	e.PUT("/order/:orderId", c.updateOrderInfo,
 		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
 	e.POST("/order/:orderId/edit-done", nil,
 		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole)) // 대기

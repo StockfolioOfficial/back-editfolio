@@ -3,19 +3,33 @@ package domain
 import (
 	"context"
 	"database/sql"
+	"github.com/stockfolioofficial/back-editfolio/util/pointer"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/stockfolioofficial/back-editfolio/util/gormx"
-	"github.com/stockfolioofficial/back-editfolio/util/pointer"
 )
+
+type CreateOrderOption struct {
+	Orderer     uuid.UUID
+	Requirement *string
+}
+
+func CreateOrder(option CreateOrderOption) Order {
+	return Order{
+		Id:          uuid.New(),
+		OrderedAt:   time.Now(),
+		Orderer:     option.Orderer,
+		Requirement: option.Requirement,
+	}
+}
 
 type Order struct {
 	Id          uuid.UUID  `gorm:"type:char(36);primaryKey"`
 	OrderedAt   time.Time  `gorm:"size:6;index;not null"`
 	Orderer     uuid.UUID  `gorm:"type:char(36);index;not null"`
-	EditCount   uint16     `gorm:"not null"`
-	EditTotal   uint16     `gorm:"not null"`
+	EditCount   uint8      `gorm:"not null"`
+	EditTotal   uint8      `gorm:"not null"`
 	State       uint8      `gorm:"not null"`
 	DueDate     *time.Time `gorm:"type:date"`
 	Assignee    *uuid.UUID `gorm:"type:char(36);index"`
@@ -27,18 +41,12 @@ func (Order) TableName() string {
 	return "order"
 }
 
-type CreateOrderOption struct {
-	Orderer     User
-	Requirement *string
+func (o *Order) RemainingEditCount() uint8 {
+	return o.EditTotal - o.EditCount
 }
 
-func CreateOrder(option CreateOrderOption) Order {
-	return Order{
-		Id:          uuid.New(),
-		OrderedAt:   time.Now(),
-		Orderer:     option.Orderer.Id,
-		Requirement: option.Requirement,
-	}
+func (o *Order) Done() {
+	o.DoneAt = pointer.Time(time.Now())
 }
 
 type OrderGeneralState uint8
@@ -67,8 +75,10 @@ type OrderRepository interface {
 	Save(ctx context.Context, order *Order) error
 	Transaction(ctx context.Context, fn func(orderRepo OrderTxRepository) error, options ...*sql.TxOptions) error
 	With(tx gormx.Tx) OrderTxRepository
+
 	GetById(ctx context.Context, orderId uuid.UUID) (*Order, error)
 	GetRecentByOrdererId(ctx context.Context, ordererId uuid.UUID) (*Order, error)
+
 	Fetch(ctx context.Context, option FetchOrderOption) ([]Order, error)
 }
 
@@ -80,6 +90,17 @@ type OrderTxRepository interface {
 type RequestOrder struct {
 	UserId      uuid.UUID
 	Requirement string
+}
+
+type OrderDone struct {
+	UserId uuid.UUID
+}
+
+type UpdateOrderInfo struct {
+	OrderId    uuid.UUID
+	DueDate    time.Time
+	Assignee   uuid.UUID
+	OrderState uint8
 }
 
 type OrderInfo struct {
@@ -95,53 +116,41 @@ type OrderInfo struct {
 	DoneAt             *time.Time
 }
 
-type UpdateOrderInfo struct {
-	OrderId    uuid.UUID
-	DueDate    time.Time
-	Assignee   uuid.UUID
-	OrderState uint8
-}
-
-type OrderUseCase interface {
-	RequestOrder(ctx context.Context, or RequestOrder) (uuid.UUID, error)
-	Fetch(ctx context.Context, option FetchOrderOption) (res []OrderInfo, err error)
-	MyOrderDone(ctx context.Context, ud OrderDone) (orderId uuid.UUID, err error)
-  UpdateOrderDetailInfo(ctx context.Context, uo *UpdateOrderInfo) (err error)
-	GetRecentProcessingOrder(ctx context.Context, userId uuid.UUID) (ro RecentOrderInfo, err error)
-	GetOrderDetailInfo(ctx context.Context, orderId uuid.UUID) (od OrderDetailInfo, err error)
-}
-
-type OrderDone struct {
-	UserId uuid.UUID
-}
-
-func (u *Order) Done() {
-	u.DoneAt = pointer.Time(time.Now())
-}
-
 type RecentOrderInfo struct {
-	AssigneeNickname   *string
-	DueDate            *time.Time
 	OrderId            uuid.UUID
+	OrderedAt          time.Time
+	DueDate            *time.Time
+	AssigneeNickname   *string
 	OrderState         uint8
 	OrderStateContent  string
-	OrderedAt          time.Time
 	RemainingEditCount uint8
 }
 
-type AssigneeInfo struct {
+type OrderAssigneeInfo struct {
 	Id       uuid.UUID
 	Name     string
 	Nickname string
 }
 
 type OrderDetailInfo struct {
-	AssigneeInfo       *AssigneeInfo
-	DueDate            *time.Time
 	OrderId            uuid.UUID
+	OrderedAt          time.Time
+	DueDate            *time.Time
+	AssigneeInfo       *OrderAssigneeInfo
 	OrderState         uint8
 	OrderStateContent  string
-	OrderedAt          time.Time
 	RemainingEditCount uint8
-	Requirement        *string
+	Requirement        string
+}
+
+type OrderUseCase interface {
+	RequestOrder(ctx context.Context, in RequestOrder) (uuid.UUID, error)
+	OrderDone(ctx context.Context, in OrderDone) (uuid.UUID, error)
+
+	UpdateOrderInfo(ctx context.Context, in *UpdateOrderInfo) error
+
+	GetRecentProcessingOrder(ctx context.Context, userId uuid.UUID) (RecentOrderInfo, error)
+	GetOrderDetailInfo(ctx context.Context, orderId uuid.UUID) (OrderDetailInfo, error)
+
+	Fetch(ctx context.Context, option FetchOrderOption) ([]OrderInfo, error)
 }

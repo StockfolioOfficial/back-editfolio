@@ -86,4 +86,4 @@ jobs:
           docker rm $CONTAINER_NAME 2>/dev/null
           docker rmi $IMAGE_LATEST
           docker pull $IMAGE_LATEST
-          docker run -d --name=$CONTAINER_NAME -p $DST_PORT:8000 $IMAGE_LATEST
+          docker run -d --net=editfolio-net --name=$CONTAINER_NAME -p $DST_PORT:8000 $IMAGE_LATEST

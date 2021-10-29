@@ -1,5 +1,5 @@
 # back-editfolio
-나중에 설명문 누가 작성좀 해줘
+이후 추가 기능은 private v2 로 진행 합니다.
 
 # How to Start
 

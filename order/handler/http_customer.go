@@ -16,7 +16,7 @@ type CreateOrderRequest struct {
 } // @name CreateOrderRequest
 
 type CreateOrderResponse struct {
-	Id uuid.UUID `json:"orderId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	OrderId uuid.UUID `json:"orderId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 } // @name CreateOrderResponse
 
 // @Tags (Order) 고객 기능
@@ -46,7 +46,7 @@ func (c *OrderController) createOrder(ctx echo.Context, userId uuid.UUID) error 
 
 	switch err {
 	case nil:
-		return ctx.JSON(http.StatusCreated, CreateOrderResponse{Id: orderId})
+		return ctx.JSON(http.StatusCreated, CreateOrderResponse{OrderId: orderId})
 	case domain.ErrNoPermission:
 		return ctx.JSON(http.StatusUnauthorized, domain.NoPermissionResponse)
 	case domain.ErrItemAlreadyExist:
@@ -64,7 +64,7 @@ type RecentOrderInfoResponse struct {
 	AssigneeNickname   *string    `json:"assigneeNickname" example:"담당 편집자 닉네임"`
 	OrderState         uint8      `json:"orderState" validate:"required" example:"3"`
 	OrderStateContent  string     `json:"orderStateContent" validate:"required" example:"이펙트 추가 중"`
-	RemainingEditCount uint16     `json:"remainingEditCount" validate:"required" example:"2"`
+	RemainingEditCount uint8      `json:"remainingEditCount" validate:"required" example:"2"`
 } //@name RecentOrderInfoResponse
 
 // @Tags (Order) 고객 기능
@@ -75,25 +75,28 @@ type RecentOrderInfoResponse struct {
 // @Success 200 {object} RecentOrderInfoResponse true "의뢰 정보 가져오기 완료"
 // @Router /order/recent-processing [get]
 func (c *OrderController) getRecentProcessingOrder(ctx echo.Context, userId uuid.UUID) error {
-
 	res, err := c.useCase.GetRecentProcessingOrder(ctx.Request().Context(), userId)
 
-	if err != nil {
-		return domain.ErrItemNotFound
+	switch err {
+	case nil:
+		return ctx.JSON(http.StatusOK, RecentOrderInfoResponse{
+			OrderedAt:          res.OrderedAt,
+			DueDate:            res.DueDate,
+			AssigneeNickname:   res.AssigneeNickname,
+			OrderState:         res.OrderState,
+			OrderStateContent:  res.OrderStateContent,
+			RemainingEditCount: res.RemainingEditCount,
+		})
+	case domain.ErrItemNotFound:
+		return ctx.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
+	default:
+		log.WithError(err).Error(tag, "order done requirement failed")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
 	}
-
-	return ctx.JSON(http.StatusOK, RecentOrderInfoResponse{
-		OrderedAt:          res.OrderedAt,
-		DueDate:            res.DueDate,
-		AssigneeNickname:   res.AssigneeNickname,
-		OrderState:         res.OrderState,
-		OrderStateContent:  res.OrderStateContent,
-		RemainingEditCount: uint16(res.RemainingEditCount),
-	})
 }
 
 type DoneOrderResponse struct {
-	Id uuid.UUID `json:"orderId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	OrderId uuid.UUID `json:"orderId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 } // @name DoneOrderResponse
 
 // @Tags (Order) 고객 기능
@@ -105,13 +108,13 @@ type DoneOrderResponse struct {
 // @Router /order/recent-processing/done [post]
 func (c *OrderController) myOrderDone(ctx echo.Context, userId uuid.UUID) error {
 
-	orderId, err := c.useCase.MyOrderDone(ctx.Request().Context(), domain.OrderDone{
+	orderId, err := c.useCase.OrderDone(ctx.Request().Context(), domain.OrderDone{
 		UserId: userId,
 	})
 
 	switch err {
 	case nil:
-		return ctx.JSON(http.StatusOK, DoneOrderResponse{Id: orderId})
+		return ctx.JSON(http.StatusOK, DoneOrderResponse{OrderId: orderId})
 	case domain.ErrUserNotCustomer:
 		return ctx.JSON(http.StatusBadRequest, domain.ErrUserNotCustomer)
 	default:
