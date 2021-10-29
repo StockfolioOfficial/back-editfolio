@@ -14,12 +14,14 @@ const (
 )
 
 type OrderState struct {
-	Id       uint8          `gorm:"primaryKey"`
-	Code     OrderStateCode `gorm:"size:20;index;not null"`
-	Content  string         `gorm:"size:150;index;not null"`
-	ParentId *uint8         `gorm:"index"`
-	Parent   *OrderState    `gorm:"foreignKey:ParentId"`
-	Orders   []Order        `gorm:"foreignKey:State"`
+	Id          uint8          `gorm:"primaryKey"`
+	Code        OrderStateCode `gorm:"size:20;index;not null"`
+	Content     string         `gorm:"size:150;index;not null"`
+	LongContent string         `gorm:"size:300;not null"`
+	Emoji       string         `gorm:"size:1;not null"`
+	ParentId    *uint8         `gorm:"index"`
+	Parent      *OrderState    `gorm:"foreignKey:ParentId"`
+	Orders      []Order        `gorm:"foreignKey:State"`
 }
 
 func (OrderState) TableName() string {

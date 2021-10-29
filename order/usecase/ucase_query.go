@@ -58,7 +58,8 @@ func (u *ucase) GetRecentProcessingOrder(ctx context.Context, userId uuid.UUID) 
 		}
 
 		if state != nil {
-			res.OrderStateContent = state.Content
+			res.OrderStateContent = state.LongContent
+			res.OrderStateEmoji = state.Emoji
 		}
 		return
 	})
