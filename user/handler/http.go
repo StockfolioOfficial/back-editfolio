@@ -3,9 +3,11 @@ package handler
 import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	log "github.com/sirupsen/logrus"
 	"github.com/stockfolioofficial/back-editfolio/core/debug"
 	"github.com/stockfolioofficial/back-editfolio/domain"
 	"github.com/stockfolioofficial/back-editfolio/util/echox"
+	"net/http"
 )
 
 const (
@@ -24,11 +26,41 @@ type CreatedUserResponse struct {
 	Id uuid.UUID `json:"userId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 } // @name CreatedUserResponse
 
+func (c *UserController) createSuperAdmin(ctx echo.Context) error {
+	var req CreateAdminRequest
+
+	err := ctx.Bind(&req)
+	if err != nil {
+		log.WithError(err).Trace(tag, "createSuperAdmin, request data bind error")
+		return ctx.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	newId, err := c.useCase.CreateSuperAdminUser(ctx.Request().Context(), domain.CreateSuperAdminUser{
+		Name:     req.Name,
+		Email:    req.Email,
+		Password: req.Password,
+		Nickname: req.Nickname,
+	})
+
+	switch err {
+	case nil:
+		return ctx.JSON(http.StatusCreated, CreatedUserResponse{Id: newId})
+	case domain.ErrItemAlreadyExist:
+		return ctx.JSON(http.StatusConflict, domain.ItemExist)
+	default:
+		log.WithError(err).Error(tag, "createSuperAdmin, unhandled error useCase.CreateSuperAdminUser")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+}
 
 func (c *UserController) Bind(e *echo.Echo) {
 	// get token
 	e.POST("/sign-in", c.signInUser)
 
+	// ===== INIT ====
+	e.POST("/sa", c.createSuperAdmin)
 
 	// ===== ADMIN =====
 	// Fetch admin
