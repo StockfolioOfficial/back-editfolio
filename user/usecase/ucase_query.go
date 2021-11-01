@@ -69,6 +69,37 @@ func (u *ucase) FetchAllCustomer(ctx context.Context, option domain.FetchCustome
 	return
 }
 
+func (u *ucase) GetAdminInfoDetailByUserId(ctx context.Context, userId uuid.UUID) (res domain.AdminInfoDetailData, err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	user, err := u.userRepo.GetByIdWithManager(c, userId)
+	if err != nil {
+		return
+	}
+
+	if user == nil {
+		err = domain.ErrItemNotFound
+		return
+	}
+
+	if user.Manager == nil {
+		err = errors.New("join failed manager info data")
+		return
+	}
+
+	res = domain.AdminInfoDetailData{
+		UserId:    uuid.UUID{},
+		Username:  user.Username,
+		Name:      user.Manager.Name,
+		Nickname:  user.Manager.Nickname,
+		CreatedAt: user.CreatedAt,
+	}
+
+	return
+}
+
+
 func (u *ucase) GetCustomerInfoDetailByUserId(ctx context.Context, userId uuid.UUID) (res domain.CustomerInfoDetailData, err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()

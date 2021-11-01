@@ -9,6 +9,42 @@ import (
 	"time"
 )
 
+type AdminSimpleInfoResponse struct {
+	UserId   uuid.UUID `json:"userId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Name     string    `json:"name" validate:"required" example:"이름"`
+	Username string    `json:"username" validate:"required" example:"example@example.com"`
+	Nickname string    `json:"nickname" validate:"required" example:"(주)스톡폴리오"`
+} // @name AdminSimpleInfoResponse
+
+// @Tags (User) 어드민 기능
+// @Security Auth-Jwt-Bearer
+// @Summary [어드민] 자기 정보 가져오기
+// @Description 어드민이 자기 정보 가져오는 기능, 역할(role)이 'ADMIN', 'SUPER_ADMIN' 이여야함
+// @Accept json
+// @Produce json
+// @Success 200 {object} AdminSimpleInfoResponse "성공"
+// @Router /admin/me [get]
+func (c *UserController) getAdminMyInfo(ctx echo.Context, userId uuid.UUID) error {
+
+	res, err := c.useCase.GetAdminInfoDetailByUserId(ctx.Request().Context(), userId)
+
+	switch err {
+	case nil:
+		return ctx.JSON(http.StatusOK, AdminSimpleInfoResponse{
+			UserId:   res.UserId,
+			Name:     res.Name,
+			Username: res.Username,
+			Nickname: res.Nickname,
+		})
+	case domain.ErrItemNotFound:
+		return ctx.JSON(http.StatusUnauthorized, domain.ErrorResponse{Message: err.Error()})
+	default:
+		log.WithError(err).Error(tag, "getAdminMyInfo, unhandled error useCase.GetAdminInfoDetailByUserId")
+		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
+	}
+}
+
+
 type UpdateAdminMyInfoRequest struct {
 	Email    string `json:"email" validate:"required,email" example:"example@example.com"`
 	Name     string `json:"name" validate:"required,min=2,max=60" example:"sch"`

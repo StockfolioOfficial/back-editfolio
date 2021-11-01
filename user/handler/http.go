@@ -24,6 +24,7 @@ type CreatedUserResponse struct {
 	Id uuid.UUID `json:"userId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 } // @name CreatedUserResponse
 
+
 func (c *UserController) Bind(e *echo.Echo) {
 	// get token
 	e.POST("/sign-in", c.signInUser)
@@ -39,6 +40,8 @@ func (c *UserController) Bind(e *echo.Echo) {
 		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole, domain.AdminUserRole))
 
 	// Self control
+	// Get my info (admin)
+	e.GET("/admin/me", echox.UserID(c.updateAdminMyInfo), debug.JwtBypassOnDebug())
 	// Update my info
 	e.PUT("/admin/me", echox.UserID(c.updateAdminMyInfo), debug.JwtBypassOnDebug())
 	// Update admin password

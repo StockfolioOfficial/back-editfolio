@@ -160,7 +160,6 @@ func (u *ucase) RequestEditOrder(ctx context.Context, in domain.RequestEditOrder
 			return
 		}
 
-		order.UseEdit()
 		return
 	})
 	g.Go(func() (err error) {
@@ -179,6 +178,7 @@ func (u *ucase) RequestEditOrder(ctx context.Context, in domain.RequestEditOrder
 		err = domain.ErrItemAlreadyExist
 		return
 	}
+	order.UseEdit()
 	order.State = state.Id
 	err = u.orderRepo.Save(c, order)
 	return
@@ -244,25 +244,23 @@ func (u *ucase) UpdateOrderInfo(ctx context.Context, in domain.UpdateOrderInfo) 
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
+	order, err := u.orderRepo.GetById(c, in.OrderId)
+	if err != nil {
+		return err
+	}
+
+	if order == nil {
+		err = domain.ErrItemNotFound
+		return
+	}
+
+
 	var (
-		oExists *domain.Order
 		aExists *domain.Manager
 		sExists *domain.OrderState
 	)
 
 	g, gc := errgroup.WithContext(c)
-	g.Go(func() (err error) {
-		oExists, err = u.orderRepo.GetById(gc, in.OrderId)
-		if err != nil {
-			return err
-		}
-
-		if oExists == nil {
-			err = domain.ErrItemNotFound
-		}
-		return
-	})
-
 	g.Go(func() (err error) {
 		aExists, err = u.managerRepo.GetById(gc, in.Assignee)
 		if err != nil {
@@ -276,7 +274,11 @@ func (u *ucase) UpdateOrderInfo(ctx context.Context, in domain.UpdateOrderInfo) 
 	})
 
 	g.Go(func() (err error) {
-		sExists, err = u.orderStateRepo.GetById(gc, in.OrderState)
+		if order.Assignee == nil {
+			sExists, err = u.orderStateRepo.GetByCode(gc, domain.OrderStateCodeTake)
+		} else {
+			sExists, err = u.orderStateRepo.GetById(gc, in.OrderState)
+		}
 		if err != nil {
 			return err
 		}
@@ -292,11 +294,11 @@ func (u *ucase) UpdateOrderInfo(ctx context.Context, in domain.UpdateOrderInfo) 
 		return
 	}
 
-	oExists.DueDate = &in.DueDate
-	oExists.Assignee = &in.Assignee
-	oExists.State = in.OrderState
+	order.DueDate = &in.DueDate
+	order.Assignee = &in.Assignee
+	order.State = in.OrderState
 
-	return u.orderRepo.Save(c, oExists)
+	return u.orderRepo.Save(c, order)
 }
 
 

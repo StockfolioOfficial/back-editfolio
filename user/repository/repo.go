@@ -55,6 +55,21 @@ func (r *repo) GetByIdWithCustomer(ctx context.Context, id uuid.UUID) (user *dom
 	return
 }
 
+func (r *repo) GetByIdWithManager(ctx context.Context, id uuid.UUID) (user *domain.User, err error) {
+	var entity domain.User
+	err = r.db.WithContext(ctx).
+		Joins("Manager").
+		Where("`deleted_at` IS NULL").
+		First(&entity, id).Error
+	if err == nil {
+		user = &entity
+	} else if err == gorm.ErrRecordNotFound {
+		err = nil
+	}
+
+	return
+}
+
 func (r *repo) GetByUsername(ctx context.Context, username string) (user *domain.User, err error) {
 	var entity domain.User
 	err = r.db.WithContext(ctx).

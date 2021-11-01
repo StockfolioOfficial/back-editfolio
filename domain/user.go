@@ -195,6 +195,7 @@ type UserRepository interface {
 	FetchAllCustomer(ctx context.Context, option FetchCustomerOption) ([]User, error)
 
 	GetByIdWithCustomer(ctx context.Context, id uuid.UUID) (*User, error)
+	GetByIdWithManager(ctx context.Context, id uuid.UUID) (*User, error)
 }
 
 type UserTxRepository interface {
@@ -261,6 +262,14 @@ type DeleteAdminUser struct {
 	UserId uuid.UUID
 }
 
+type AdminInfoDetailData struct {
+	UserId    uuid.UUID
+	Username  string
+	Name      string
+	Nickname  string
+	CreatedAt time.Time
+}
+
 type CustomerInfoDetailData struct {
 	UserId         uuid.UUID
 	Name           string
@@ -316,6 +325,7 @@ type UserUseCase interface {
 	DeleteCustomerUser(ctx context.Context, in DeleteCustomerUser) error
 	DeleteAdminUser(ctx context.Context, in DeleteAdminUser) error
 
+	GetAdminInfoDetailByUserId(ctx context.Context, userId uuid.UUID) (AdminInfoDetailData, error)
 	GetCustomerInfoDetailByUserId(ctx context.Context, userId uuid.UUID) (CustomerInfoDetailData, error)
 	FetchAllAdmin(ctx context.Context, option FetchAdminOption) ([]AdminInfoData, error)
 	FetchAllCustomer(ctx context.Context, option FetchCustomerOption) ([]CustomerInfoData, error)
