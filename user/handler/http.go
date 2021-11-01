@@ -41,7 +41,7 @@ func (c *UserController) Bind(e *echo.Echo) {
 
 	// Self control
 	// Get my info (admin)
-	e.GET("/admin/me", echox.UserID(c.updateAdminMyInfo), debug.JwtBypassOnDebug())
+	e.GET("/admin/me", echox.UserID(c.getAdminMyInfo), debug.JwtBypassOnDebug())
 	// Update my info
 	e.PUT("/admin/me", echox.UserID(c.updateAdminMyInfo), debug.JwtBypassOnDebug())
 	// Update admin password
