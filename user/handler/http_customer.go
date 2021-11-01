@@ -59,6 +59,10 @@ func (c *UserController) getMyCustomerInfo(ctx echo.Context, userId uuid.UUID) e
 		SimpleNotify:        CustomerSimpleNotifyNone,
 	}
 
+	if out.RemainingOrderCount == 0 {
+		res.SimpleNotify = CustomerSimpleNotifyNeedBuyOneEdit
+	}
+
 	now := time.Now()
 	if out.SubscribeStart == nil && out.SubscribeEnd == nil {
 		res.SimpleNotify = CustomerSimpleNotifyNeedBuySubscribe
@@ -69,10 +73,6 @@ func (c *UserController) getMyCustomerInfo(ctx echo.Context, userId uuid.UUID) e
 	} else if out.SubscribeStart == nil || out.SubscribeEnd == nil {
 		log.WithField("out", out).Error("의도 하지 않는 구독 일자")
 		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
-	}
-
-	if out.RemainingOrderCount == 0 {
-		res.SimpleNotify = CustomerSimpleNotifyNeedBuyOneEdit
 	}
 
 	return ctx.JSON(http.StatusOK, res)
