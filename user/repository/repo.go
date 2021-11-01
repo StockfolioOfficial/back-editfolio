@@ -21,6 +21,15 @@ type repo struct {
 	db *gorm.DB
 }
 
+func (r *repo) ExistsSuperUser(ctx context.Context) (exists bool, err error) {
+	var cnt int64
+	err = r.db.WithContext(ctx).
+		Where("`role` = ?", domain.SuperAdminUserRole).
+		Count(&cnt).Error
+	exists = cnt > 0
+	return
+}
+
 func (r *repo) FetchAllAdmin(ctx context.Context, option domain.FetchAdminOption) (list []domain.User, err error) {
 	err = r.db.WithContext(ctx).
 		Joins("Manager").
