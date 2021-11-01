@@ -23,7 +23,8 @@ type repo struct {
 
 func (r *repo) ExistsSuperUser(ctx context.Context) (exists bool, err error) {
 	var cnt int64
-	err = r.db.WithContext(ctx).
+	err = r.db.Model(&domain.User{}).
+		WithContext(ctx).
 		Where("`role` = ?", domain.SuperAdminUserRole).
 		Count(&cnt).Error
 	exists = cnt > 0
