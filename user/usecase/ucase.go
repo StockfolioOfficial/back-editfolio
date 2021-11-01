@@ -61,11 +61,51 @@ func (u *ucase) SignInUser(ctx context.Context, si domain.SignInUser) (token str
 	return
 }
 
+func (u *ucase) CreateSuperAdminUser(ctx context.Context, in domain.CreateSuperAdminUser) (newId uuid.UUID, err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	//TODO 나중에 유저네임 이미 있는거 체크도 필요할듯
+	exists, err := u.userRepo.ExistsSuperUser(c)
+	if err != nil {
+		return
+	}
+	if exists {
+		err = domain.ErrItemAlreadyExist
+		return
+	}
+
+	var user = createUser(domain.SuperAdminUserRole, in.Email, in.Password)
+	var manager = domain.CreateManager(domain.ManagerCreateOption{
+		User:     &user,
+		Name:     in.Name,
+		Nickname: in.Nickname,
+	})
+
+	err = u.userRepo.Transaction(c, func(ur domain.UserTxRepository) error {
+		mr := u.managerRepo.With(ur)
+		g, gc := errgroup.WithContext(c)
+		g.Go(func() error {
+			return ur.Save(gc, &user)
+		})
+		g.Go(func() error {
+			return mr.Save(gc, &manager)
+		})
+		return g.Wait()
+	})
+	newId = user.Id
+	return
+}
+
+
 func (u *ucase) CreateCustomerUser(ctx context.Context, in domain.CreateCustomerUser) (newId uuid.UUID, err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
 	exists, err := u.userRepo.GetByUsername(c, in.Email)
+	if err != nil {
+		return
+	}
 	if exists != nil {
 		err = domain.ErrItemAlreadyExist
 		return

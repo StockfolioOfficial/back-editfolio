@@ -188,6 +188,8 @@ type UserRepository interface {
 	Save(ctx context.Context, user *User) error
 	Transaction(ctx context.Context, fn func(userRepo UserTxRepository) error, options ...*sql.TxOptions) error
 
+	ExistsSuperUser(ctx context.Context) (bool, error)
+
 	GetByUsername(ctx context.Context, username string) (*User, error)
 	GetById(ctx context.Context, userId uuid.UUID) (*User, error)
 
@@ -206,6 +208,13 @@ type UserTxRepository interface {
 type SignInUser struct {
 	Username string
 	Password string
+}
+
+type CreateSuperAdminUser struct {
+	Name     string
+	Email    string
+	Password string
+	Nickname string
 }
 
 type CreateCustomerUser struct {
@@ -314,6 +323,7 @@ type CustomerSubscribeInfoData struct {
 type UserUseCase interface {
 	SignInUser(ctx context.Context, in SignInUser) (string, error)
 
+	CreateSuperAdminUser(ctx context.Context, in CreateSuperAdminUser) (uuid.UUID, error)
 	CreateCustomerUser(ctx context.Context, in CreateCustomerUser) (uuid.UUID, error)
 	CreateAdminUser(ctx context.Context, in CreateAdminUser) (uuid.UUID, error)
 
