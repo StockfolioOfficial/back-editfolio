@@ -21,16 +21,26 @@ type ucase struct {
 	timeout time.Duration
 }
 
+// FetchByParentId
+// Deprecated
 func (u *ucase) FetchByParentId(ctx context.Context, parentId uint8) (res []domain.OrderStateInfo, err error) {
 	c, cancel := context.WithTimeout(ctx, u.timeout)
 	defer cancel()
 
-	list, err := u.orderStateRepo.FetchByParentId(c, parentId)
+	state, err := u.orderStateRepo.GetById(c, parentId)
 	if err != nil {
 		return
 	}
 
-	res = domainToOrderStateInfoList(list)
+	if state != nil && state.GroupId != nil {
+		var list []domain.OrderState
+		list, err = u.orderStateRepo.FetchByGroupId(c, *state.GroupId)
+		if err != nil {
+			return
+		}
+		res = domainToOrderStateInfoList(list)
+	}
+
 	return
 }
 
