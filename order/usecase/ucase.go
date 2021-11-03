@@ -296,7 +296,11 @@ func (u *ucase) UpdateOrderInfo(ctx context.Context, in domain.UpdateOrderInfo) 
 
 	order.DueDate = &in.DueDate
 	order.Assignee = &in.Assignee
-	order.State = in.OrderState
+	if sExists == nil {
+		order.State = in.OrderState
+	} else {
+		order.State = sExists.Id
+	}
 
 	return u.orderRepo.Save(c, order)
 }
