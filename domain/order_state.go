@@ -20,6 +20,7 @@ type OrderState struct {
 	LongContent string         `gorm:"size:300;not null"`
 	Emoji       string         `gorm:"size:1;not null"`
 	ParentId    *uint8         `gorm:"index"`
+	GroupId     *uint8         `gorm:"index"`
 	Parent      *OrderState    `gorm:"foreignKey:ParentId"`
 	Orders      []Order        `gorm:"foreignKey:State"`
 }
@@ -36,6 +37,7 @@ type OrderStateRepository interface {
 
 	GetByCode(ctx context.Context, code OrderStateCode) (*OrderState, error)
 	FetchByParentId(ctx context.Context, parentId uint8) ([]OrderState, error)
+	FetchByGroupId(ctx context.Context, groupId uint8) ([]OrderState, error)
 }
 
 type OrderStateInfo struct {

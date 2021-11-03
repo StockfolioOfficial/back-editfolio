@@ -23,6 +23,7 @@ func NewOrderStateRepository(db *gorm.DB) domain.OrderStateRepository {
 			Content:     "영상 검토 중",
 			LongContent: "배정된 편집자가 영상을\n 열심히 확인하고 있어요",
 			Emoji:       "👀",
+			GroupId:     pointer.Uint8(1),
 		},
 		{
 			Id:          3,
@@ -31,6 +32,7 @@ func NewOrderStateRepository(db *gorm.DB) domain.OrderStateRepository {
 			LongContent: "영상을 이쁘게 자르고 붙이는 중...",
 			Emoji:       "😍",
 			ParentId:    pointer.Uint8(2),
+			GroupId:     pointer.Uint8(1),
 		},
 		{
 			Id:          4,
@@ -39,6 +41,7 @@ func NewOrderStateRepository(db *gorm.DB) domain.OrderStateRepository {
 			LongContent: "아주 환상적인 이펙트를 입히는 중입니다.",
 			Emoji:       "🎇",
 			ParentId:    pointer.Uint8(2),
+			GroupId:     pointer.Uint8(1),
 		},
 		{
 			Id:          5,
@@ -47,6 +50,7 @@ func NewOrderStateRepository(db *gorm.DB) domain.OrderStateRepository {
 			LongContent: "영상편집이 완료되었습니다",
 			Emoji:       "😘",
 			ParentId:    pointer.Uint8(2),
+			GroupId:     pointer.Uint8(1),
 		},
 		{
 			Id:          6,
@@ -69,6 +73,7 @@ func NewOrderStateRepository(db *gorm.DB) domain.OrderStateRepository {
 			LongContent: "영상편집이 완료되었습니다",
 			Emoji:       "😘",
 			ParentId:    pointer.Uint8(7),
+			GroupId:     pointer.Uint8(2),
 		},
 	}
 	db.Create(bookedOrderState)
@@ -99,6 +104,16 @@ func (r *repo) FetchByParentId(ctx context.Context, parentId uint8) (list []doma
 		Error
 	return
 }
+
+func (r *repo) FetchByGroupId(ctx context.Context, groupId uint8) (list []domain.OrderState, err error) {
+	err = r.db.WithContext(ctx).
+		Order("`id` asc").
+		Where("`group_id` = ?", groupId).
+		Find(&list).
+		Error
+	return
+}
+
 
 func (r *repo) GetById(ctx context.Context, id uint8) (res *domain.OrderState, err error) {
 	var entity domain.OrderState
