@@ -89,7 +89,8 @@ func (u *ucase) GetAdminInfoDetailByUserId(ctx context.Context, userId uuid.UUID
 	}
 
 	res = domain.AdminInfoDetailData{
-		UserId:    uuid.UUID{},
+		UserId:    user.Id,
+		Role:      user.Role,
 		Username:  user.Username,
 		Name:      user.Manager.Name,
 		Nickname:  user.Manager.Nickname,

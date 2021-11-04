@@ -65,6 +65,7 @@ func NewOrderStateRepository(db *gorm.DB) domain.OrderStateRepository {
 			Content:     "수정 중",
 			LongContent: "요청하신 수정사항을 작업중입니다.",
 			Emoji:       "🛠",
+			GroupId:     pointer.Uint8(2),
 		},
 		{
 			Id:          8,
