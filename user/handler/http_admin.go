@@ -185,6 +185,8 @@ func (c *UserController) createCustomer(ctx echo.Context) error {
 	switch err {
 	case nil:
 		return ctx.JSON(http.StatusCreated, CreatedUserResponse{Id: newId})
+	case domain.ErrItemAlreadyExist:
+		return ctx.JSON(http.StatusConflict, domain.ErrorResponse{Message: err.Error()})
 	default:
 		log.WithError(err).Error(tag, "create customer, unhandled error useCase.CreateCustomerUser")
 		return ctx.JSON(http.StatusInternalServerError, domain.ServerInternalErrorResponse)
