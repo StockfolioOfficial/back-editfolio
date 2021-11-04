@@ -11,6 +11,7 @@ import (
 
 type AdminSimpleInfoResponse struct {
 	UserId   uuid.UUID `json:"userId" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Role     []string  `json:"roles" validate:"required" example:"ADMIN"`
 	Name     string    `json:"name" validate:"required" example:"이름"`
 	Username string    `json:"username" validate:"required" example:"example@example.com"`
 	Nickname string    `json:"nickname" validate:"required" example:"(주)스톡폴리오"`
@@ -32,6 +33,7 @@ func (c *UserController) getAdminMyInfo(ctx echo.Context, userId uuid.UUID) erro
 	case nil:
 		return ctx.JSON(http.StatusOK, AdminSimpleInfoResponse{
 			UserId:   res.UserId,
+			Role:     []string{string(res.Role)},
 			Name:     res.Name,
 			Username: res.Username,
 			Nickname: res.Nickname,

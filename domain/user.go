@@ -273,6 +273,7 @@ type DeleteAdminUser struct {
 
 type AdminInfoDetailData struct {
 	UserId    uuid.UUID
+	Role      UserRole
 	Username  string
 	Name      string
 	Nickname  string
