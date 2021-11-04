@@ -199,10 +199,10 @@ type UpdateCustomerInfoRequest struct {
 	Name string `json:"name" validate:"required,min=2,max=60" example:"ljs"`
 
 	// ChannelName, 길이 2~100 제한
-	ChannelName string `json:"channelName" validate:"required,min=2,max=100" example:"밥굽남"`
+	ChannelName string `json:"channelName" validate:"max=100" example:"밥굽남"`
 
 	// ChannelLink, 길이 2048 제한
-	ChannelLink string `json:"channelLink" validate:"required,max=2048" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
+	ChannelLink string `json:"channelLink" validate:"max=2048" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
 
 	// Email, 이메일 주소
 	Email string `json:"email" validate:"required,email" example:"example@example.com"`
@@ -211,10 +211,10 @@ type UpdateCustomerInfoRequest struct {
 	Mobile string `json:"mobile" validate:"required,sf_mobile" example:"01012345678"`
 
 	//PersonaLink, 길이 2048 제한
-	PersonaLink string `json:"personaLink" validate:"required,max=2048" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
+	PersonaLink string `json:"personaLink" validate:"max=2048" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
 
 	//OnedriveLink, 길이 2048 제한
-	OnedriveLink string `json:"onedriveLink" validate:"required,max=2048" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
+	OnedriveLink string `json:"onedriveLink" validate:"max=2048" example:"https://www.youtube.com/channel/UCdfhK0yIMjmhcQ3gP-qpXRw"`
 
 	//Memo, 형식 : text
 	Memo string `json:"memo" example:"이사람 까다로움"`
