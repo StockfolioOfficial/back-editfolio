@@ -298,7 +298,7 @@ func (c *UserController) deleteCustomerUser(ctx echo.Context) error {
 
 	switch err {
 	case nil:
-		return ctx.JSON(http.StatusNoContent, domain.ErrorResponse{Message: err.Error()})
+		return ctx.NoContent(http.StatusNoContent)
 	case domain.ErrItemNotFound:
 		return ctx.JSON(http.StatusNotFound, domain.ErrorResponse{Message: err.Error()})
 	default:
