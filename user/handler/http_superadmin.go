@@ -112,7 +112,7 @@ func (c *UserController) updateAdminBySuperAdmin(ctx echo.Context) error {
 type UpdateAdminPasswordRequest struct {
 	UserId   uuid.UUID `param:"userId" json:"-" validate:"required" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Password string    `json:"password" validate:"required,sf_password" example:"pass1234!@"`
-} // @name UpdateAdminInfoRequest
+} // @name UpdateAdminPasswordRequest
 
 // @Tags (User) 슈퍼어드민 기능
 // @Security Auth-Jwt-Bearer

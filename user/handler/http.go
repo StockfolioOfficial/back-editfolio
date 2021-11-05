@@ -110,6 +110,9 @@ func (c *UserController) Bind(e *echo.Echo) {
 	// Update admin info
 	e.PUT("/admin/:userId", c.updateAdminBySuperAdmin,
 		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
+	// Update admin info
+	e.PATCH("/admin/:userId/pw", c.updateAdminPasswordBySuperAdmin,
+		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
 	// Delete admin
 	e.DELETE("/admin/:userId", c.deleteAdminBySuperAdmin,
 		debug.JwtBypassOnDebugWithRole(domain.SuperAdminUserRole))
