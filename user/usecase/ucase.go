@@ -338,7 +338,6 @@ func (u *ucase) ForceUpdateAdminInfo(ctx context.Context, in domain.ForceUpdateA
 		return
 	}
 
-	user.UpdatePassword(in.Password)
 	user.UpdateManagerInfo(in.Username, in.Name, in.Nickname)
 	return u.userRepo.Transaction(c, func(ur domain.UserTxRepository) error {
 		g, gc := errgroup.WithContext(c)
@@ -350,6 +349,26 @@ func (u *ucase) ForceUpdateAdminInfo(ctx context.Context, in domain.ForceUpdateA
 		})
 		return g.Wait()
 	})
+}
+
+func (u *ucase) ForceUpdateAdminPassword(ctx context.Context, in domain.ForceUpdateAdminPassword) (err error) {
+	c, cancel := context.WithTimeout(ctx, u.timeout)
+	defer cancel()
+
+	user, err := u.userRepo.GetById(c, in.UserId)
+	if err != nil {
+		return
+	}
+
+	if !domain.CheckUserAlive(user,
+		domain.User.IsAdmin,
+		domain.User.IsSuperAdmin) {
+		err = domain.ErrItemNotFound
+		return
+	}
+
+	user.UpdatePassword(in.Password)
+	return u.userRepo.Save(c, user)
 }
 
 func (u *ucase) DeleteCustomerUser(ctx context.Context, in domain.DeleteCustomerUser) (err error) {
