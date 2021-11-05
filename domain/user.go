@@ -258,9 +258,13 @@ type UpdateAdminPassword struct {
 type ForceUpdateAdminInfo struct {
 	UserId   uuid.UUID
 	Name     string
-	Password string
 	Username string
 	Nickname string
+}
+
+type ForceUpdateAdminPassword struct {
+	UserId   uuid.UUID
+	Password string
 }
 
 type DeleteCustomerUser struct {
@@ -332,6 +336,7 @@ type UserUseCase interface {
 	UpdateAdminPassword(ctx context.Context, in UpdateAdminPassword) error
 	UpdateAdminInfo(ctx context.Context, in UpdateAdminInfo) error
 	ForceUpdateAdminInfo(ctx context.Context, in ForceUpdateAdminInfo) error
+	ForceUpdateAdminPassword(ctx context.Context, in ForceUpdateAdminPassword) error
 
 	DeleteCustomerUser(ctx context.Context, in DeleteCustomerUser) error
 	DeleteAdminUser(ctx context.Context, in DeleteAdminUser) error
